@@ -1,5 +1,22 @@
+export const ENTITY_IDS = {
+  USERS: "USERS",
+  ROLES: "ROLES",
+  USERS_PRIVILEGES: "USERS_PRIVILEGES",
+} as const;
+
+export type EntityId = (typeof ENTITY_IDS)[keyof typeof ENTITY_IDS];
+export type RouteId = EntityId;
+
+export const PERMISSION_ACTIONS = ["create", "read", "update", "delete"] as const;
+export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];
+
+export type PermissionRequirement = {
+  entity: EntityId;
+  action: PermissionAction;
+};
+
 export type Permission = {
-  entity: string;
+  entity: EntityId;
   create: boolean;
   read: boolean;
   update: boolean;
@@ -10,7 +27,7 @@ export type Role = {
   id: string;
   name: string;
   active: boolean;
-  routes: Array<"USERS" | "ROLES">;
+  routes: RouteId[];
   permissions: Permission[];
   createdAt?: string;
   updatedAt?: string;

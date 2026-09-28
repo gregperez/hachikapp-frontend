@@ -10,7 +10,7 @@ asignado completo, comprobar deriva y respetar alcance y dependencias.
 | Plan | Resultado | Prioridad | Esfuerzo | Depende de | Estado |
 |---|---|---:|---:|---|---|
 | [001](./001-establecer-baseline-pruebas-frontend.md) | Baseline de pruebas frontend | P1 | M | — | DONE |
-| [002](./002-modularizar-navegacion-por-permisos.md) | Navegación modular y autorizada | P1 | M | 001 | TODO |
+| [002](./002-modularizar-navegacion-por-permisos.md) | Navegación modular y autorizada | P1 | M | 001 | DONE |
 | [003](./003-crear-menu-cuenta-accesible.md) | Menú de cuenta accesible | P1 | S | 001, 002 | TODO |
 | [004](./004-gestionar-sesiones-activas.md) | Sesiones activas autogestionables | P1 | L | 001, 002 | TODO |
 | [005](./005-persistir-y-consultar-auditoria.md) | Auditoría administrativa consultable | P1 | L | 002 | TODO |

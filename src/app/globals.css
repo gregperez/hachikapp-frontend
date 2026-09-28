@@ -38,13 +38,13 @@ a { color: inherit; text-decoration: none; }
 .brand-mark-large { width: 52px; height: 52px; border-radius: 15px; }
 .brand-light { color: #fff; }
 .nav-caption { margin: 43px 12px 12px; color: #7f8aa5; font-size: 10px; font-weight: 750; letter-spacing: 1.35px; }
-.nav-list { display: grid; gap: 5px; }
+.nav-section + .nav-section .nav-caption { margin-top: 28px; }
+.nav-list { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
 .nav-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 13px; color: #aeb8cf; border-radius: 10px; font-size: 14px; font-weight: 550; transition: .18s ease; }
 .nav-item:hover { color: #fff; background: rgb(255 255 255 / 5%); }
 .nav-item.active { color: #fff; background: linear-gradient(90deg, rgb(108 94 234 / 28%), rgb(108 94 234 / 12%)); box-shadow: inset 3px 0 #7568f4; }
 .nav-button { width: 100%; border: 0; cursor: pointer; text-align: left; }
 .nav-button small { margin-left: auto; padding: 3px 6px; color: #b9b2ff; background: rgb(117 104 244 / 18%); border: 1px solid rgb(153 142 255 / 20%); border-radius: 5px; font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; }
-.ai-nav-caption { margin-top: 28px; }
 .sidebar-footer { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 16px 8px 0; border-top: 1px solid rgb(255 255 255 / 8%); }
 .sidebar-user-copy { min-width: 0; display: flex; flex: 1; flex-direction: column; }
 .sidebar-user-copy strong { overflow: hidden; color: #fff; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
