@@ -30,8 +30,18 @@ export default function UsersPage() {
       if (activeCursor) params.set("cursor", activeCursor);
       const envelope = await api<ApiEnvelope<CursorPage<User>>>(`v1/users?${params}`);
       const result = dataOf(envelope);
+      const hydratedUsers = await Promise.all(
+        (result.data || []).map(async (user) => {
+          try {
+            const detail = await api<ApiEnvelope<User>>(`v1/users/${encodeURIComponent(user.id)}`);
+            return dataOf(detail);
+          } catch {
+            return user;
+          }
+        }),
+      );
       setPage(result);
-      setUsers(result.data || []);
+      setUsers(hydratedUsers);
     } catch (caught) {
       setNotice({ message: errorMessage(caught), kind: "error" });
     } finally {
@@ -63,16 +73,31 @@ export default function UsersPage() {
     }
   }
 
-  function openRoles(user: User) {
+  async function openRoles(user: User) {
     setRolesUser(user);
     setSelectedRoles((user.roles || []).map((role) => role.id));
+    try {
+      const envelope = await api<ApiEnvelope<User>>(`v1/users/${encodeURIComponent(user.id)}`);
+      const currentUser = dataOf(envelope);
+      setRolesUser(currentUser);
+      setSelectedRoles((currentUser.roles || []).map((role) => role.id));
+    } catch (caught) {
+      setNotice({ message: errorMessage(caught), kind: "error" });
+      setRolesUser(null);
+    }
   }
 
   async function saveRoles(event: FormEvent) {
     event.preventDefault();
     if (!rolesUser || selectedRoles.length === 0) return;
-    await mutateUser(`v1/users/${rolesUser.id}/roles`, { roleIds: selectedRoles }, "Roles actualizados correctamente.");
-    setRolesUser(null);
+    try {
+      await api(`v1/users/${rolesUser.id}/roles`, { method: "PUT", body: JSON.stringify({ roleIds: selectedRoles }) });
+      setNotice({ message: "Roles actualizados correctamente.", kind: "success" });
+      setRolesUser(null);
+      await loadUsers();
+    } catch (caught) {
+      setNotice({ message: errorMessage(caught), kind: "error" });
+    }
   }
 
   function nextPage() {
@@ -119,7 +144,7 @@ export default function UsersPage() {
                     <td><StatusBadge active={user.active} /></td>
                     <td className="muted-cell">{formatDate(user.createdAt)}</td>
                     <td><div className="row-actions">
-                      <button className="icon-button bordered" title="Gestionar roles" onClick={() => openRoles(user)}><ShieldCheck size={17} /></button>
+                      <button className="icon-button bordered" title="Gestionar roles" onClick={() => void openRoles(user)}><ShieldCheck size={17} /></button>
                       <button className="icon-button bordered" title={user.isAdmin ? "Quitar administrador" : "Hacer administrador"} onClick={() => void mutateUser(`v1/users/${user.id}/admin`, { isAdmin: !user.isAdmin }, "Privilegios actualizados.")}><UserCog size={17} /></button>
                       <button className="icon-button bordered" title={user.active ? "Desactivar" : "Activar"} onClick={() => void mutateUser(`v1/users/${user.id}/change-status`, { active: !user.active }, `Usuario ${user.active ? "desactivado" : "activado"}.`)}><MoreHorizontal size={18} /></button>
                     </div></td>
