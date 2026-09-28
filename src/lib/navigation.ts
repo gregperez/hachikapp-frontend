@@ -2,6 +2,7 @@ import { canAccess, isFeatureEnabled } from "@/lib/permissions";
 import { ENTITY_IDS, type PermissionRequirement, type User } from "@/lib/types";
 import {
   Bot,
+  ClipboardList,
   LayoutDashboard,
   ShieldCheck,
   Users,
@@ -71,6 +72,14 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Roles y permisos",
         icon: ShieldCheck,
         requiredPermission: { entity: ENTITY_IDS.ROLES, action: "read" },
+      },
+      {
+        id: "audit",
+        kind: "link",
+        href: "/dashboard/audit",
+        label: "Auditoría",
+        icon: ClipboardList,
+        requiredPermission: { entity: ENTITY_IDS.AUDIT_EVENTS, action: "read" },
       },
     ],
   },

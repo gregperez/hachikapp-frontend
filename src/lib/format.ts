@@ -15,3 +15,14 @@ export function formatDate(value?: string) {
     year: "numeric",
   }).format(new Date(value));
 }
+
+export function formatDateTime(value?: string) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}

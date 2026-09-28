@@ -2,6 +2,7 @@ export const ENTITY_IDS = {
   USERS: "USERS",
   ROLES: "ROLES",
   USERS_PRIVILEGES: "USERS_PRIVILEGES",
+  AUDIT_EVENTS: "AUDIT_EVENTS",
 } as const;
 
 export type EntityId = (typeof ENTITY_IDS)[keyof typeof ENTITY_IDS];
@@ -53,6 +54,28 @@ export type Session = {
   expiresAt: string;
   clientLabel: string;
   ipPrefix?: string;
+};
+
+export type AuditEvent = {
+  id: string;
+  occurredAt: string;
+  category: string;
+  action: string;
+  outcome: string;
+  actorId: string;
+  subjectType: string;
+  subjectId?: string;
+  requestId?: string;
+  metadata?: Record<string, unknown>;
+};
+
+export type AuditFilters = {
+  action: string;
+  outcome: string;
+  actorId: string;
+  subjectId: string;
+  from: string;
+  to: string;
 };
 
 export type CursorPage<T> = {

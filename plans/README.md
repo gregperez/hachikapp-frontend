@@ -13,7 +13,7 @@ asignado completo, comprobar deriva y respetar alcance y dependencias.
 | [002](./002-modularizar-navegacion-por-permisos.md) | Navegación modular y autorizada | P1 | M | 001 | DONE |
 | [003](./003-crear-menu-cuenta-accesible.md) | Menú de cuenta accesible | P1 | S | 001, 002 | DONE |
 | [004](./004-gestionar-sesiones-activas.md) | Sesiones activas autogestionables | P1 | L | 001, 002 | DONE |
-| [005](./005-persistir-y-consultar-auditoria.md) | Auditoría administrativa consultable | P1 | L | 002 | TODO |
+| [005](./005-persistir-y-consultar-auditoria.md) | Auditoría administrativa consultable | P1 | L | 002 | DONE |
 | [006](./006-agregar-configuracion-tipificada.md) | Configuración general tipificada | P2 | L | 002, 005 | TODO |
 | [007](./007-crear-catalogo-integraciones.md) | Catálogo modular de integraciones | P2 | M | 002, 006 | TODO |
 | [008](./008-integrar-api-mastra.md) | API Mastra independiente integrada | P2 | L | 001, 002, 005, 007 | TODO |
