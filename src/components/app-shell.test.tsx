@@ -62,7 +62,9 @@ describe("AppShell navigation", () => {
     expect(screen.getByRole("link", { name: "Resumen" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Usuarios" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Roles y permisos" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Mi perfil" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Mi perfil" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cerrar sesión" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Menú de cuenta" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Asistente IA/ })).toBeInTheDocument();
   });
 

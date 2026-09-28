@@ -34,8 +34,8 @@ describe("visibleNavSections", () => {
 });
 
 describe("canSeeNavItem", () => {
-  it("keeps profile visible without an administrative permission", () => {
-    expect(canSeeNavItem(makeUser(), itemById("profile"))).toBe(true);
+  it("keeps the dashboard visible without an administrative permission", () => {
+    expect(canSeeNavItem(makeUser(), itemById("dashboard"))).toBe(true);
   });
 
   it("hides roles without ROLES.read", () => {

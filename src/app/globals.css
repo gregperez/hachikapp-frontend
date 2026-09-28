@@ -58,7 +58,16 @@ a { color: inherit; text-decoration: none; }
 .topbar > div:nth-child(2) { display: flex; flex-direction: column; }
 .topbar strong { font-size: 14px; }
 .topbar-eyebrow { display: none; color: var(--muted-2); font-size: 10px; text-transform: uppercase; letter-spacing: .8px; }
-.topbar-account { margin-left: auto; display: flex; align-items: center; gap: 9px; color: #4a5367; font-size: 13px; font-weight: 600; }
+.topbar-account { display: flex; align-items: center; gap: 9px; min-height: 40px; padding: 0 8px 0 4px; color: #4a5367; font-size: 13px; font-weight: 600; background: transparent; border: 0; border-radius: 10px; cursor: pointer; }
+.topbar-account:hover, .topbar-account[aria-expanded="true"] { background: #f4f5f8; }
+.account-menu { position: relative; margin-left: auto; }
+.account-chevron { flex: 0 0 auto; transition: transform .18s ease; }
+.account-chevron.open { transform: rotate(180deg); }
+.account-menu-list { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; min-width: 220px; margin: 0; padding: 6px; list-style: none; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+.account-menu-list a, .account-menu-list button { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; color: #3b4354; background: transparent; border: 0; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 600; text-align: left; cursor: pointer; }
+.account-menu-list a:hover, .account-menu-list button:hover { background: var(--canvas); }
+.account-menu-list button.danger { color: var(--danger); }
+#seguridad { scroll-margin-top: 88px; }
 .menu-button { display: none !important; }
 .page-content { width: 100%; max-width: 1500px; margin: 0 auto; padding: 36px; }
 
@@ -370,7 +379,7 @@ input:disabled { color: #8d95a5; background: #f5f6f8; }
   .switch-check span { width: 26px; height: 16px; }
   .switch-check span::after { width: 10px; height: 10px; }
   .switch-check input:checked + span::after { transform: translateX(10px); }
-  .topbar-account span, .topbar-account > svg { display: none; }
+  .topbar-account span:not(.avatar), .topbar-account > svg { display: none; }
   .chat-panel { width: 100vw; }
   .chat-composer small { display: none; }
 }

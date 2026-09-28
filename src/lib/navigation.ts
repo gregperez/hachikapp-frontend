@@ -2,7 +2,6 @@ import { canAccess, isFeatureEnabled } from "@/lib/permissions";
 import { ENTITY_IDS, type PermissionRequirement, type User } from "@/lib/types";
 import {
   Bot,
-  CircleUserRound,
   LayoutDashboard,
   ShieldCheck,
   Users,
@@ -50,14 +49,6 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/dashboard",
         label: "Resumen",
         icon: LayoutDashboard,
-      },
-      // Temporal: el plan 003 mueve el perfil al menú de cuenta.
-      {
-        id: "profile",
-        kind: "link",
-        href: "/dashboard/profile",
-        label: "Mi perfil",
-        icon: CircleUserRound,
       },
     ],
   },

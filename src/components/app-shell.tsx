@@ -8,10 +8,11 @@ import {
   type NavActionItem,
   type NavItem,
 } from "@/lib/navigation";
-import { ChevronDown, LogOut, Menu, ShieldCheck, X } from "lucide-react";
+import { Menu, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
+import { AccountMenu } from "./account-menu";
 import { useSession } from "./session-provider";
 import { AIChatPanel } from "./ai-chat-panel";
 
@@ -72,9 +73,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <strong>{loading ? "Cargando…" : user?.name || "Usuario"}</strong>
             <span>{user?.isAdmin ? "Administrador" : "Miembro"}</span>
           </div>
-          <button className="icon-button" onClick={() => void logout()} aria-label="Cerrar sesión" title="Cerrar sesión">
-            <LogOut size={18} />
-          </button>
         </div>
       </aside>
 
@@ -89,11 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="topbar-eyebrow">Base Console</span>
             <strong>{activeLabel}</strong>
           </div>
-          <div className="topbar-account">
-            <div className="avatar avatar-small">{initials(user?.name)}</div>
-            <span>{user?.name?.split(" ")[0] || "Cuenta"}</span>
-            <ChevronDown size={15} />
-          </div>
+          <AccountMenu user={user} loading={loading} onLogout={logout} />
         </header>
         <main className="page-content">{children}</main>
       </div>

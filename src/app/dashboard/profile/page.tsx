@@ -20,6 +20,10 @@ export default function ProfilePage() {
 
   useEffect(() => setName(user?.name || ""), [user]);
   useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (hash) document.getElementById(hash)?.scrollIntoView();
+  }, []);
+  useEffect(() => {
     if (new URLSearchParams(window.location.search).get("linked")) {
       setProfileNotice({ message: "La cuenta de Google quedó vinculada correctamente.", kind: "success" });
     }
@@ -84,7 +88,7 @@ export default function ProfilePage() {
           </form>
         </section>
 
-        <section className="panel form-panel">
+        <section id="seguridad" className="panel form-panel">
           <div className="panel-heading icon-heading"><span className="metric-icon amber"><LockKeyhole size={20} /></span><div><h2>Seguridad</h2><p>Actualiza tu contraseña de acceso</p></div></div>
           <Notice message={passwordNotice?.message} kind={passwordNotice?.kind} />
           <form className="modal-form" onSubmit={changePassword}>
