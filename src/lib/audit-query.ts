@@ -17,6 +17,7 @@ const ALLOWED_ACTIONS = new Set([
   "assign_roles",
   "set_admin_flag",
   "set_active",
+  "update_settings",
 ]);
 
 const ALLOWED_OUTCOMES = new Set(["success", "failure"]);

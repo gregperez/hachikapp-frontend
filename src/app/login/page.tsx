@@ -1,7 +1,9 @@
 "use client";
 
+import { BrandMark } from "@/components/brand-mark";
+import { useSettings } from "@/components/settings-provider";
 import { api, errorMessage } from "@/lib/api";
-import { ArrowRight, CheckCircle2, Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 
@@ -13,6 +15,7 @@ function LoginForm() {
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
   const params = useSearchParams();
+  const { settings } = useSettings();
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -44,10 +47,7 @@ function LoginForm() {
         <div className="login-glow login-glow-one" />
         <div className="login-glow login-glow-two" />
         <div className="login-story-content">
-          <div className="brand brand-light">
-            <span className="brand-mark"><ShieldCheck size={21} /></span>
-            <span>Base<span>Console</span></span>
-          </div>
+          <BrandMark name={settings.displayName} logoUrl={settings.logoUrl} light />
           <div className="story-copy">
             <p className="eyebrow light">CONTROL DE ACCESO, SIN RUIDO</p>
             <h1>Tu equipo,<br />bajo control.</h1>
@@ -64,9 +64,8 @@ function LoginForm() {
 
       <section className="login-panel">
         <div className="login-card">
-          <div className="mobile-brand brand">
-            <span className="brand-mark"><ShieldCheck size={21} /></span>
-            <span>Base<span>Console</span></span>
+          <div className="mobile-brand">
+            <BrandMark name={settings.displayName} logoUrl={settings.logoUrl} />
           </div>
           <div className="login-heading">
             <span className="login-icon"><LockKeyhole size={22} /></span>

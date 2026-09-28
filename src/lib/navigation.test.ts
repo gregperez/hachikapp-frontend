@@ -29,7 +29,7 @@ describe("visibleNavSections", () => {
 
   it("shows every administrative link to an admin", () => {
     const admin = visibleNavSections(adminUser()).find((section) => section.id === "admin");
-    expect(admin?.items.map((item) => item.id)).toEqual(["users", "roles", "audit"]);
+    expect(admin?.items.map((item) => item.id)).toEqual(["users", "roles", "audit", "settings-general"]);
   });
 });
 
@@ -51,6 +51,14 @@ describe("canSeeNavItem", () => {
     expect(canSeeNavItem(
       makeUser({ permissions: [permission(ENTITY_IDS.AUDIT_EVENTS, { read: true })] }),
       itemById("audit"),
+    )).toBe(true);
+  });
+
+  it("hides settings without SETTINGS.read", () => {
+    expect(canSeeNavItem(usersReader(), itemById("settings-general"))).toBe(false);
+    expect(canSeeNavItem(
+      makeUser({ permissions: [permission(ENTITY_IDS.SETTINGS, { read: true })] }),
+      itemById("settings-general"),
     )).toBe(true);
   });
 });

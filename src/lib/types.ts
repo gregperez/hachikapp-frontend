@@ -3,6 +3,7 @@ export const ENTITY_IDS = {
   ROLES: "ROLES",
   USERS_PRIVILEGES: "USERS_PRIVILEGES",
   AUDIT_EVENTS: "AUDIT_EVENTS",
+  SETTINGS: "SETTINGS",
 } as const;
 
 export type EntityId = (typeof ENTITY_IDS)[keyof typeof ENTITY_IDS];
@@ -76,6 +77,26 @@ export type AuditFilters = {
   subjectId: string;
   from: string;
   to: string;
+};
+
+export type PublicSettings = {
+  displayName: string;
+  logoUrl: string;
+  defaultLocale: string;
+};
+
+export type AppSettings = PublicSettings & {
+  version: number;
+  updatedAt?: string;
+  updatedBy?: string;
+};
+
+export type ThemePreference = "light" | "dark" | "system";
+
+export type PersonalPreferences = {
+  theme: ThemePreference;
+  locale: string;
+  timeZone: string;
 };
 
 export type CursorPage<T> = {

@@ -46,6 +46,7 @@ export function errorMessage(error: unknown): string {
       "Invalid credentials": "Las credenciales no son válidas.",
       "You do not have permission to perform this action": "No tienes permiso para realizar esta acción.",
       "The resource already exists or conflicts with current state": "El recurso ya existe o entra en conflicto con el estado actual.",
+      "The settings were updated by someone else": "La configuración fue actualizada por otra persona.",
     };
     if (translations[error.message]) return translations[error.message];
   }

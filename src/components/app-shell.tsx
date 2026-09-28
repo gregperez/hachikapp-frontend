@@ -8,12 +8,14 @@ import {
   type NavActionItem,
   type NavItem,
 } from "@/lib/navigation";
-import { Menu, ShieldCheck, X } from "lucide-react";
+import { BrandMark } from "./brand-mark";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AccountMenu } from "./account-menu";
 import { useSession } from "./session-provider";
+import { useSettings } from "./settings-provider";
 import { AIChatPanel } from "./ai-chat-panel";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -21,6 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [chatOpen, setChatOpen] = useState(false);
   const pathname = usePathname();
   const { user, loading, logout } = useSession();
+  const { settings } = useSettings();
   const sections = useMemo(() => visibleNavSections(user), [user]);
   const activeLabel = activeNavLabel(pathname, sections);
 
@@ -37,9 +40,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="app-frame">
       <aside className={`sidebar ${menuOpen ? "sidebar-open" : ""}`}>
         <div className="brand-row">
-          <Link href="/dashboard" className="brand" onClick={closeMenu}>
-            <span className="brand-mark"><ShieldCheck size={21} /></span>
-            <span>Base<span>Console</span></span>
+          <Link href="/dashboard" className="brand-link" onClick={closeMenu}>
+            <BrandMark name={settings.displayName} logoUrl={settings.logoUrl} light />
           </Link>
           <button className="icon-button sidebar-close" onClick={closeMenu} aria-label="Cerrar menú">
             <X size={20} />
@@ -84,7 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Menu size={21} />
           </button>
           <div>
-            <span className="topbar-eyebrow">Base Console</span>
+            <span className="topbar-eyebrow">{settings.displayName}</span>
             <strong>{activeLabel}</strong>
           </div>
           <AccountMenu user={user} loading={loading} onLogout={logout} />

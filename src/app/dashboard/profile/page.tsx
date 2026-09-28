@@ -4,13 +4,16 @@ import { ActiveSessions } from "@/components/active-sessions";
 import { Notice, PageHeader, StatusBadge } from "@/components/ui";
 import { PasswordPolicy, visiblePasswordChecks } from "@/components/password-policy";
 import { useSession } from "@/components/session-provider";
+import { useSettings } from "@/components/settings-provider";
 import { api, errorMessage } from "@/lib/api";
 import { initials } from "@/lib/format";
-import { KeyRound, LockKeyhole, Mail, Save, ShieldCheck, UserRound } from "lucide-react";
+import { ALLOWED_LOCALES } from "@/lib/settings";
+import { KeyRound, LockKeyhole, Mail, Palette, Save, ShieldCheck, UserRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 export default function ProfilePage() {
   const { user, refresh } = useSession();
+  const { preferences, savePreferences, settings } = useSettings();
   const [name, setName] = useState("");
   const [profileNotice, setProfileNotice] = useState<{ message: string; kind: "success" | "error" } | null>(null);
   const [passwordNotice, setPasswordNotice] = useState<{ message: string; kind: "success" | "error" } | null>(null);
@@ -104,6 +107,34 @@ export default function ProfilePage() {
           </form>
         </section>
       </div>
+
+      <section className="panel form-panel">
+        <div className="panel-heading icon-heading"><span className="metric-icon blue"><Palette size={20} /></span><div><h2>Preferencias personales</h2><p>Tema, idioma y zona horaria de este dispositivo. No se mezclan con la configuración administrativa.</p></div></div>
+        <form className="modal-form" onSubmit={(event) => event.preventDefault()}>
+          <div className="form-grid two-columns">
+            <label>Tema
+              <select value={preferences.theme} onChange={(event) => savePreferences({ ...preferences, theme: event.target.value as typeof preferences.theme })}>
+                <option value="system">Sistema</option>
+                <option value="light">Claro</option>
+                <option value="dark">Oscuro</option>
+              </select>
+            </label>
+            <label>Idioma
+              <select value={preferences.locale} onChange={(event) => savePreferences({ ...preferences, locale: event.target.value })}>
+                <option value="">Igual que la consola ({settings.defaultLocale})</option>
+                {ALLOWED_LOCALES.map((locale) => <option key={locale} value={locale}>{locale}</option>)}
+              </select>
+            </label>
+            <label>Zona horaria
+              <input
+                value={preferences.timeZone}
+                onChange={(event) => savePreferences({ ...preferences, timeZone: event.target.value })}
+                placeholder={Intl.DateTimeFormat().resolvedOptions().timeZone}
+              />
+            </label>
+          </div>
+        </form>
+      </section>
 
       <div className="profile-sessions">
         <ActiveSessions />

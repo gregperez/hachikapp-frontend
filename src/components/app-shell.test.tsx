@@ -38,6 +38,17 @@ vi.mock("@/components/session-provider", () => ({
   }),
 }));
 
+vi.mock("@/components/settings-provider", () => ({
+  useSettings: () => ({
+    settings: { displayName: "Base Console", logoUrl: "", defaultLocale: "es" },
+    preferences: { theme: "system", locale: "", timeZone: "" },
+    source: "fallback",
+    loading: false,
+    refresh: vi.fn(),
+    savePreferences: vi.fn(),
+  }),
+}));
+
 vi.mock("@/components/ai-chat-panel", () => ({
   AIChatPanel: ({ open }: { open: boolean }) => (open ? <div>Panel del asistente</div> : null),
 }));
@@ -63,6 +74,7 @@ describe("AppShell navigation", () => {
     expect(screen.getByRole("link", { name: "Usuarios" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Roles y permisos" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Auditoría" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Configuración" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Mi perfil" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Cerrar sesión" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Menú de cuenta" })).toBeInTheDocument();
@@ -74,6 +86,7 @@ describe("AppShell navigation", () => {
     expect(screen.getByRole("link", { name: "Usuarios" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Roles y permisos" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Auditoría" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Configuración" })).not.toBeInTheDocument();
     expect(screen.getByText("Administración")).toBeInTheDocument();
   });
 
