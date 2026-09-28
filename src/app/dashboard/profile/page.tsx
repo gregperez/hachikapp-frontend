@@ -1,5 +1,6 @@
 "use client";
 
+import { ActiveSessions } from "@/components/active-sessions";
 import { Notice, PageHeader, StatusBadge } from "@/components/ui";
 import { PasswordPolicy, visiblePasswordChecks } from "@/components/password-policy";
 import { useSession } from "@/components/session-provider";
@@ -102,6 +103,10 @@ export default function ProfilePage() {
             <div className="form-submit"><button className="button primary"><KeyRound size={17} /> Actualizar contraseña</button></div>
           </form>
         </section>
+      </div>
+
+      <div className="profile-sessions">
+        <ActiveSessions />
       </div>
     </>
   );

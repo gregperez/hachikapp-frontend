@@ -12,7 +12,7 @@ asignado completo, comprobar deriva y respetar alcance y dependencias.
 | [001](./001-establecer-baseline-pruebas-frontend.md) | Baseline de pruebas frontend | P1 | M | — | DONE |
 | [002](./002-modularizar-navegacion-por-permisos.md) | Navegación modular y autorizada | P1 | M | 001 | DONE |
 | [003](./003-crear-menu-cuenta-accesible.md) | Menú de cuenta accesible | P1 | S | 001, 002 | DONE |
-| [004](./004-gestionar-sesiones-activas.md) | Sesiones activas autogestionables | P1 | L | 001, 002 | TODO |
+| [004](./004-gestionar-sesiones-activas.md) | Sesiones activas autogestionables | P1 | L | 001, 002 | DONE |
 | [005](./005-persistir-y-consultar-auditoria.md) | Auditoría administrativa consultable | P1 | L | 002 | TODO |
 | [006](./006-agregar-configuracion-tipificada.md) | Configuración general tipificada | P2 | L | 002, 005 | TODO |
 | [007](./007-crear-catalogo-integraciones.md) | Catálogo modular de integraciones | P2 | M | 002, 006 | TODO |

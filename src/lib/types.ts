@@ -45,6 +45,16 @@ export type User = {
   updatedAt?: string;
 };
 
+export type Session = {
+  familyId: string;
+  current: boolean;
+  issuedAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  clientLabel: string;
+  ipPrefix?: string;
+};
+
 export type CursorPage<T> = {
   data: T[];
   limit: number;

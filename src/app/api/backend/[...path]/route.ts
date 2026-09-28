@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isOwnSessionsPath, sessionRefreshHeader, shouldClearCookiesAfterRevoke } from "@/lib/session-proxy";
 
 const backendUrl = (process.env.BACKEND_URL || "http://localhost:8080").replace(/\/$/, "");
 const ACCESS_COOKIE = "base_access";
@@ -39,10 +40,14 @@ async function backendFetch(
   method: string,
   body: ArrayBuffer | undefined,
   accessToken?: string,
+  extraHeaders?: HeadersInit,
 ) {
   const headers = new Headers({ Accept: "application/json" });
   if (body?.byteLength) headers.set("Content-Type", "application/json");
   if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+  if (extraHeaders) {
+    new Headers(extraHeaders).forEach((value, key) => headers.set(key, value));
+  }
   return fetch(url, { method, headers, body: body?.byteLength ? body : undefined, cache: "no-store" });
 }
 
@@ -90,6 +95,7 @@ async function proxyRequest(
   const body = method === "GET" || method === "HEAD" ? undefined : await request.arrayBuffer();
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
   const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
+  let sessionHeaders = isOwnSessionsPath(apiPath) ? sessionRefreshHeader(refreshToken) : undefined;
 
   if (apiPath === "v1/auth/logout") {
     const logoutBody = new TextEncoder().encode(JSON.stringify({ refreshToken })).buffer;
@@ -99,7 +105,7 @@ async function proxyRequest(
     return response;
   }
 
-  let upstream = await backendFetch(url, method, body, accessToken);
+  let upstream = await backendFetch(url, method, body, accessToken, sessionHeaders);
   let rotatedTokens: TokenEnvelope | undefined;
 
   const isSessionStart = apiPath === "v1/auth/login" || apiPath === "v1/auth/oidc/google/exchange";
@@ -122,8 +128,19 @@ async function proxyRequest(
     );
     if (refreshResponse.ok) {
       rotatedTokens = (await refreshResponse.json()) as TokenEnvelope;
-      upstream = await backendFetch(url, method, body, rotatedTokens.data?.accessToken);
+      if (isOwnSessionsPath(apiPath)) {
+        sessionHeaders = sessionRefreshHeader(rotatedTokens.data?.refreshToken || refreshToken);
+      }
+      upstream = await backendFetch(url, method, body, rotatedTokens.data?.accessToken, sessionHeaders);
     }
+  }
+
+  if (method === "DELETE" && isOwnSessionsPath(apiPath) && upstream.ok) {
+    const payload = (await upstream.json()) as { data?: { revokedCurrent?: boolean } };
+    const response = NextResponse.json(payload, { status: upstream.status });
+    if (rotatedTokens) saveTokens(response, rotatedTokens);
+    if (shouldClearCookiesAfterRevoke(payload)) clearTokens(response);
+    return response;
   }
 
   const response = await makeResponse(upstream);
