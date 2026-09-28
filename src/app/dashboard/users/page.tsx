@@ -5,7 +5,7 @@ import { PasswordPolicy, visiblePasswordChecks } from "@/components/password-pol
 import { api, dataOf, errorMessage } from "@/lib/api";
 import { formatDate, initials } from "@/lib/format";
 import type { ApiEnvelope, CursorPage, Role, User } from "@/lib/types";
-import { ChevronLeft, ChevronRight, MoreHorizontal, Plus, Search, ShieldCheck, UserCog, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, EyeOff, MoreHorizontal, Plus, Search, ShieldCheck, UserCog, Users } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 const PAGE_SIZE = 10;
@@ -166,12 +166,14 @@ function CreateUserModal({ open, onClose, onCreated }: { open: boolean; onClose:
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setName("");
     setEmail("");
     setPassword("");
+    setShowPassword(false);
     setError("");
   }, [open]);
 
@@ -201,7 +203,15 @@ function CreateUserModal({ open, onClose, onCreated }: { open: boolean; onClose:
           <label>Nombre completo<input name="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Ej. Paula Reyes" required /></label>
           <label>Correo electrónico<input name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="paula@empresa.com" required /></label>
         </div>
-        <label>Contraseña temporal<input name="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={15} maxLength={128} placeholder="Mínimo 15 caracteres" required /></label>
+        <label>
+          Contraseña temporal
+          <span className="password-field">
+            <input name="password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} minLength={15} maxLength={128} placeholder="Mínimo 15 caracteres" autoComplete="new-password" required />
+            <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Ocultar contraseña temporal" : "Mostrar contraseña temporal"} title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}>
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </span>
+        </label>
         <PasswordPolicy password={password} name={name} email={email} />
         <p className="form-hint">Compártela por un canal seguro y solicita cambiarla al ingresar.</p>
         <div className="modal-actions"><button type="button" className="button secondary" onClick={onClose}>Cancelar</button><button className="button primary" disabled={submitting}>{submitting ? "Creando…" : "Crear usuario"}</button></div>
