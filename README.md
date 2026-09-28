@@ -44,6 +44,8 @@ AI_CHAT_API_KEY=
 
 El chat funciona en modo de preparación cuando `AI_CHAT_ENDPOINT` está vacío. Para conectarlo, configura un endpoint server-side que reciba `{ messages }` y devuelva `{ message }` o `{ text }`; `AI_CHAT_API_KEY` se envía como Bearer token sin exponerse al navegador. Esta frontera permite agregar después un adaptador con `@mastra/client-js` o streaming con `@mastra/ai-sdk` sin modificar el panel.
 
+La decisión y el plan de implementación están documentados en [docs/mastra-api-integration.md](docs/mastra-api-integration.md).
+
 ## Integración con el backend
 
 Todas las llamadas del navegador pasan por `/api/backend/*`. Esta capa de Next.js:
