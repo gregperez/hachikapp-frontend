@@ -59,9 +59,33 @@ async function handler(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
 ) {
+  try {
+    return await proxyRequest(request, context);
+  } catch (error) {
+    console.error("Backend proxy request failed", error);
+    return NextResponse.json(
+      {
+        type: "about:blank",
+        title: "Backend no disponible",
+        status: 502,
+        code: "backend_unavailable",
+        detail: `No fue posible conectar con la API configurada en ${backendUrl}.`,
+      },
+      { status: 502 },
+    );
+  }
+}
+
+async function proxyRequest(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> },
+) {
   const { path } = await context.params;
   const apiPath = path.join("/");
-  const url = `${backendUrl}/${apiPath}${request.nextUrl.search}`;
+  // Gin registers collection handlers with a trailing slash. Going directly to
+  // that canonical URL avoids an unnecessary redirect for POST requests.
+  const upstreamPath = apiPath === "v1/roles" || apiPath === "v1/users" ? `${apiPath}/` : apiPath;
+  const url = `${backendUrl}/${upstreamPath}${request.nextUrl.search}`;
   const method = request.method;
   const body = method === "GET" || method === "HEAD" ? undefined : await request.arrayBuffer();
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
