@@ -1,0 +1,115 @@
+import { NextRequest, NextResponse } from "next/server";
+
+const backendUrl = (process.env.BACKEND_URL || "http://localhost:8080").replace(/\/$/, "");
+const ACCESS_COOKIE = "base_access";
+const REFRESH_COOKIE = "base_refresh";
+
+type TokenEnvelope = {
+  status?: number;
+  message?: string;
+  data?: { accessToken?: string; refreshToken?: string };
+};
+
+function cookieOptions(maxAge: number) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge,
+  };
+}
+
+function saveTokens(response: NextResponse, payload: TokenEnvelope) {
+  if (payload.data?.accessToken) {
+    response.cookies.set(ACCESS_COOKIE, payload.data.accessToken, cookieOptions(15 * 60));
+  }
+  if (payload.data?.refreshToken) {
+    response.cookies.set(REFRESH_COOKIE, payload.data.refreshToken, cookieOptions(7 * 24 * 60 * 60));
+  }
+}
+
+function clearTokens(response: NextResponse) {
+  response.cookies.set(ACCESS_COOKIE, "", cookieOptions(0));
+  response.cookies.set(REFRESH_COOKIE, "", cookieOptions(0));
+}
+
+async function backendFetch(
+  url: string,
+  method: string,
+  body: ArrayBuffer | undefined,
+  accessToken?: string,
+) {
+  const headers = new Headers({ Accept: "application/json" });
+  if (body?.byteLength) headers.set("Content-Type", "application/json");
+  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+  return fetch(url, { method, headers, body: body?.byteLength ? body : undefined, cache: "no-store" });
+}
+
+async function makeResponse(source: Response) {
+  const contentType = source.headers.get("content-type") || "application/json";
+  const responseBody = source.status === 204 ? null : await source.arrayBuffer();
+  return new NextResponse(responseBody, {
+    status: source.status,
+    headers: { "Content-Type": contentType },
+  });
+}
+
+async function handler(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> },
+) {
+  const { path } = await context.params;
+  const apiPath = path.join("/");
+  const url = `${backendUrl}/${apiPath}${request.nextUrl.search}`;
+  const method = request.method;
+  const body = method === "GET" || method === "HEAD" ? undefined : await request.arrayBuffer();
+  const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
+  const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
+
+  if (apiPath === "v1/auth/logout") {
+    const logoutBody = new TextEncoder().encode(JSON.stringify({ refreshToken })).buffer;
+    const upstream = await backendFetch(url, "POST", logoutBody, accessToken);
+    const response = await makeResponse(upstream);
+    clearTokens(response);
+    return response;
+  }
+
+  let upstream = await backendFetch(url, method, body, accessToken);
+  let rotatedTokens: TokenEnvelope | undefined;
+
+  const isSessionStart = apiPath === "v1/auth/login" || apiPath === "v1/auth/oidc/google/exchange";
+  if (isSessionStart && upstream.ok) {
+    const payload = (await upstream.json()) as TokenEnvelope;
+    const response = NextResponse.json(
+      { status: payload.status ?? 200, message: payload.message ?? "Sesión iniciada", data: null },
+      { status: upstream.status },
+    );
+    saveTokens(response, payload);
+    return response;
+  }
+
+  const canRefresh = upstream.status === 401 && refreshToken && !apiPath.startsWith("v1/auth/");
+  if (canRefresh) {
+    const refreshResponse = await backendFetch(
+      `${backendUrl}/v1/auth/refresh-token`,
+      "POST",
+      new TextEncoder().encode(JSON.stringify({ refreshToken })).buffer,
+    );
+    if (refreshResponse.ok) {
+      rotatedTokens = (await refreshResponse.json()) as TokenEnvelope;
+      upstream = await backendFetch(url, method, body, rotatedTokens.data?.accessToken);
+    }
+  }
+
+  const response = await makeResponse(upstream);
+  if (rotatedTokens) saveTokens(response, rotatedTokens);
+  if (upstream.status === 401 && refreshToken && !rotatedTokens) clearTokens(response);
+  return response;
+}
+
+export const GET = handler;
+export const POST = handler;
+export const PUT = handler;
+export const PATCH = handler;
+export const DELETE = handler;

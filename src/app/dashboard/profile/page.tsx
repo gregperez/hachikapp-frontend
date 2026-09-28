@@ -1,0 +1,96 @@
+"use client";
+
+import { Notice, PageHeader, StatusBadge } from "@/components/ui";
+import { useSession } from "@/components/session-provider";
+import { api, errorMessage } from "@/lib/api";
+import { initials } from "@/lib/format";
+import { KeyRound, LockKeyhole, Mail, Save, ShieldCheck, UserRound } from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+
+export default function ProfilePage() {
+  const { user, refresh } = useSession();
+  const [name, setName] = useState("");
+  const [profileNotice, setProfileNotice] = useState<{ message: string; kind: "success" | "error" } | null>(null);
+  const [passwordNotice, setPasswordNotice] = useState<{ message: string; kind: "success" | "error" } | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => setName(user?.name || ""), [user]);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("linked")) {
+      setProfileNotice({ message: "La cuenta de Google quedó vinculada correctamente.", kind: "success" });
+    }
+  }, []);
+
+  async function updateProfile(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setProfileNotice(null);
+    try {
+      await api("v1/users/me", { method: "PUT", body: JSON.stringify({ name }) });
+      await refresh();
+      setProfileNotice({ message: "Tu perfil fue actualizado.", kind: "success" });
+    } catch (caught) {
+      setProfileNotice({ message: errorMessage(caught), kind: "error" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function changePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPasswordNotice(null);
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const newPassword = String(data.get("newPassword") || "");
+    if (newPassword !== data.get("confirmation")) {
+      setPasswordNotice({ message: "La confirmación no coincide con la contraseña nueva.", kind: "error" });
+      return;
+    }
+    try {
+      await api("v1/users/me/password", { method: "PUT", body: JSON.stringify({ currentPassword: data.get("currentPassword"), newPassword }) });
+      form.reset();
+      setPasswordNotice({ message: "Contraseña actualizada. Las otras sesiones fueron revocadas.", kind: "success" });
+    } catch (caught) {
+      setPasswordNotice({ message: errorMessage(caught), kind: "error" });
+    }
+  }
+
+  return (
+    <>
+      <PageHeader eyebrow="CUENTA" title="Mi perfil" description="Mantén tus datos y credenciales siempre actualizados." />
+
+      <section className="profile-hero panel">
+        <div className="avatar avatar-xl">{initials(user?.name)}</div>
+        <div><h2>{user?.name || "Cargando…"}</h2><p>{user?.email}</p><div className="profile-badges"><StatusBadge active={user?.active ?? true} />{user?.isAdmin && <span className="role-tag admin">Administrador</span>}</div></div>
+        <div className="profile-hero-meta"><span><ShieldCheck size={16} /> {user?.roles?.length || 0} roles asignados</span><span><KeyRound size={16} /> {user?.permissions?.length || 0} grupos de permisos</span></div>
+      </section>
+
+      <div className="profile-grid">
+        <section className="panel form-panel">
+          <div className="panel-heading icon-heading"><span className="metric-icon indigo"><UserRound size={20} /></span><div><h2>Información personal</h2><p>Datos visibles en el espacio de trabajo</p></div></div>
+          <Notice message={profileNotice?.message} kind={profileNotice?.kind} />
+          <form className="modal-form" onSubmit={updateProfile}>
+            <label>Nombre completo<input value={name} onChange={(event) => setName(event.target.value)} required /></label>
+            <label>Correo electrónico<span className="input-with-icon disabled"><Mail size={17} /><input value={user?.email || ""} disabled /></span></label>
+            <p className="form-hint">El correo solo puede ser modificado por un administrador.</p>
+            <div className="form-submit"><button className="button primary" disabled={saving || name === user?.name}><Save size={17} /> {saving ? "Guardando…" : "Guardar cambios"}</button></div>
+          </form>
+        </section>
+
+        <section className="panel form-panel">
+          <div className="panel-heading icon-heading"><span className="metric-icon amber"><LockKeyhole size={20} /></span><div><h2>Seguridad</h2><p>Actualiza tu contraseña de acceso</p></div></div>
+          <Notice message={passwordNotice?.message} kind={passwordNotice?.kind} />
+          <form className="modal-form" onSubmit={changePassword}>
+            <label>Contraseña actual<input name="currentPassword" type="password" autoComplete="current-password" required /></label>
+            <div className="form-grid two-columns">
+              <label>Nueva contraseña<input name="newPassword" type="password" minLength={12} autoComplete="new-password" required /></label>
+              <label>Confirmar contraseña<input name="confirmation" type="password" minLength={12} autoComplete="new-password" required /></label>
+            </div>
+            <p className="form-hint">Usa al menos 12 caracteres. El cambio revocará las demás sesiones activas.</p>
+            <div className="form-submit"><button className="button primary"><KeyRound size={17} /> Actualizar contraseña</button></div>
+          </form>
+        </section>
+      </div>
+    </>
+  );
+}
