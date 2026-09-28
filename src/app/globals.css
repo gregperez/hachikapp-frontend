@@ -200,6 +200,16 @@ input:disabled { color: #8d95a5; background: #f5f6f8; }
 .two-columns { grid-template-columns: 1fr 1fr; }
 .form-hint { margin: -6px 0 0; color: var(--muted-2); font-size: 10px; line-height: 1.5; }
 .error-text { color: var(--danger); }
+.password-policy { padding: 13px 14px; color: #566075; background: #f8f8fc; border: 1px solid #e5e5f1; border-radius: 10px; }
+.password-policy > strong { display: block; margin-bottom: 9px; color: #3d4659; font-size: 10px; }
+.password-policy ul { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 16px; margin: 0; padding: 0; list-style: none; }
+.password-policy li { display: flex; align-items: center; gap: 7px; color: #7b8495; font-size: 9px; line-height: 1.4; }
+.password-policy li > svg { flex: 0 0 auto; }
+.password-policy li.policy-met { color: var(--green); }
+.password-policy li.policy-unmet { color: var(--danger); }
+.password-policy li.policy-info { color: #687287; }
+.password-policy small { font-size: inherit; }
+.password-policy > p { margin: 9px 0 0; color: #929aab; font-size: 9px; line-height: 1.4; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 7px; padding-top: 18px; border-top: 1px solid var(--line); }
 .form-error { padding: 11px 13px; color: #a63636; background: var(--danger-soft); border: 1px solid #f0caca; border-radius: 9px; font-size: 11px; line-height: 1.45; }
 .checkbox-list { display: grid; gap: 8px; }
@@ -312,6 +322,7 @@ input:disabled { color: #8d95a5; background: #f5f6f8; }
   .profile-hero { align-items: flex-start; flex-wrap: wrap; }
   .profile-hero-meta { width: 100%; margin: 4px 0 0 94px; flex-direction: column; gap: 8px; }
   .two-columns { grid-template-columns: 1fr; }
+  .password-policy ul { grid-template-columns: 1fr; }
   .permission-header, .permission-row { grid-template-columns: minmax(100px, 1.35fr) repeat(4, 1fr); }
   .permission-header { font-size: 7px; }
   .permission-row strong { padding-left: 9px; font-size: 9px; }

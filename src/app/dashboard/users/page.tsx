@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingState, Modal, Notice, PageHeader, StatusBadge } from "@/components/ui";
+import { PasswordPolicy, visiblePasswordChecks } from "@/components/password-policy";
 import { api, dataOf, errorMessage } from "@/lib/api";
 import { formatDate, initials } from "@/lib/format";
 import type { ApiEnvelope, CursorPage, Role, User } from "@/lib/types";
@@ -162,14 +163,28 @@ export default function UsersPage() {
 function CreateUserModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setName("");
+    setEmail("");
+    setPassword("");
+    setError("");
+  }, [open]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!visiblePasswordChecks(password, name, email).valid) {
+      setError("La contraseña no cumple los requisitos indicados.");
+      return;
+    }
     setSubmitting(true);
     setError("");
-    const form = new FormData(event.currentTarget);
     try {
-      await api("v1/users", { method: "POST", body: JSON.stringify({ name: form.get("name"), email: form.get("email"), password: form.get("password") }) });
+      await api("v1/users", { method: "POST", body: JSON.stringify({ name, email, password }) });
       onCreated();
     } catch (caught) {
       setError(errorMessage(caught));
@@ -183,11 +198,12 @@ function CreateUserModal({ open, onClose, onCreated }: { open: boolean; onClose:
       <form onSubmit={submit} className="modal-form">
         {error && <div className="form-error">{error}</div>}
         <div className="form-grid two-columns">
-          <label>Nombre completo<input name="name" placeholder="Ej. Paula Reyes" required /></label>
-          <label>Correo electrónico<input name="email" type="email" placeholder="paula@empresa.com" required /></label>
+          <label>Nombre completo<input name="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Ej. Paula Reyes" required /></label>
+          <label>Correo electrónico<input name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="paula@empresa.com" required /></label>
         </div>
-        <label>Contraseña temporal<input name="password" type="password" minLength={12} placeholder="Mínimo 12 caracteres" required /></label>
-        <p className="form-hint">Comparte la contraseña por un canal seguro y solicita cambiarla al ingresar.</p>
+        <label>Contraseña temporal<input name="password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={15} maxLength={128} placeholder="Mínimo 15 caracteres" required /></label>
+        <PasswordPolicy password={password} name={name} email={email} />
+        <p className="form-hint">Compártela por un canal seguro y solicita cambiarla al ingresar.</p>
         <div className="modal-actions"><button type="button" className="button secondary" onClick={onClose}>Cancelar</button><button className="button primary" disabled={submitting}>{submitting ? "Creando…" : "Crear usuario"}</button></div>
       </form>
     </Modal>

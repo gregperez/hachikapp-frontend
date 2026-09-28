@@ -38,5 +38,16 @@ export function dataOf<T>(envelope: ApiEnvelope<T>): T {
 }
 
 export function errorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.problem?.code === "VALIDATION_ERROR" && /password/i.test(error.problem.detail || "")) {
+      return "La contraseña no cumple la política vigente. Revisa los requisitos indicados.";
+    }
+    const translations: Record<string, string> = {
+      "Invalid credentials": "Las credenciales no son válidas.",
+      "You do not have permission to perform this action": "No tienes permiso para realizar esta acción.",
+      "The resource already exists or conflicts with current state": "El recurso ya existe o entra en conflicto con el estado actual.",
+    };
+    if (translations[error.message]) return translations[error.message];
+  }
   return error instanceof Error ? error.message : "Ocurrió un error inesperado.";
 }

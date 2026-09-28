@@ -1,6 +1,7 @@
 "use client";
 
 import { Notice, PageHeader, StatusBadge } from "@/components/ui";
+import { PasswordPolicy, visiblePasswordChecks } from "@/components/password-policy";
 import { useSession } from "@/components/session-provider";
 import { api, errorMessage } from "@/lib/api";
 import { initials } from "@/lib/format";
@@ -13,6 +14,9 @@ export default function ProfilePage() {
   const [profileNotice, setProfileNotice] = useState<{ message: string; kind: "success" | "error" } | null>(null);
   const [passwordNotice, setPasswordNotice] = useState<{ message: string; kind: "success" | "error" } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
 
   useEffect(() => setName(user?.name || ""), [user]);
   useEffect(() => {
@@ -39,16 +43,19 @@ export default function ProfilePage() {
   async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPasswordNotice(null);
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const newPassword = String(data.get("newPassword") || "");
-    if (newPassword !== data.get("confirmation")) {
+    if (!visiblePasswordChecks(newPassword, user?.name, user?.email).valid) {
+      setPasswordNotice({ message: "La contraseña nueva no cumple los requisitos indicados.", kind: "error" });
+      return;
+    }
+    if (newPassword !== confirmation) {
       setPasswordNotice({ message: "La confirmación no coincide con la contraseña nueva.", kind: "error" });
       return;
     }
     try {
-      await api("v1/users/me/password", { method: "PUT", body: JSON.stringify({ currentPassword: data.get("currentPassword"), newPassword }) });
-      form.reset();
+      await api("v1/users/me/password", { method: "PUT", body: JSON.stringify({ currentPassword, newPassword }) });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmation("");
       setPasswordNotice({ message: "Contraseña actualizada. Las otras sesiones fueron revocadas.", kind: "success" });
     } catch (caught) {
       setPasswordNotice({ message: errorMessage(caught), kind: "error" });
@@ -81,12 +88,13 @@ export default function ProfilePage() {
           <div className="panel-heading icon-heading"><span className="metric-icon amber"><LockKeyhole size={20} /></span><div><h2>Seguridad</h2><p>Actualiza tu contraseña de acceso</p></div></div>
           <Notice message={passwordNotice?.message} kind={passwordNotice?.kind} />
           <form className="modal-form" onSubmit={changePassword}>
-            <label>Contraseña actual<input name="currentPassword" type="password" autoComplete="current-password" required /></label>
+            <label>Contraseña actual<input name="currentPassword" type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" required /></label>
             <div className="form-grid two-columns">
-              <label>Nueva contraseña<input name="newPassword" type="password" minLength={12} autoComplete="new-password" required /></label>
-              <label>Confirmar contraseña<input name="confirmation" type="password" minLength={12} autoComplete="new-password" required /></label>
+              <label>Nueva contraseña<input name="newPassword" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={15} maxLength={128} autoComplete="new-password" required /></label>
+              <label>Confirmar contraseña<input name="confirmation" type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} minLength={15} maxLength={128} autoComplete="new-password" required /></label>
             </div>
-            <p className="form-hint">Usa al menos 12 caracteres. El cambio revocará las demás sesiones activas.</p>
+            <PasswordPolicy password={newPassword} name={user?.name} email={user?.email} />
+            <p className="form-hint">El cambio revocará las demás sesiones activas.</p>
             <div className="form-submit"><button className="button primary"><KeyRound size={17} /> Actualizar contraseña</button></div>
           </form>
         </section>
