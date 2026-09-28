@@ -61,7 +61,10 @@ Para Google OIDC, agrega `http://localhost:3000/auth/callback` a los destinos pe
 ## Verificación
 
 ```bash
+npm test
 npm run lint
 npm run typecheck
 npm run build
 ```
+
+`npm test` ejecuta Vitest en modo no interactivo. Usa `npm run test:watch` para el modo observador.
