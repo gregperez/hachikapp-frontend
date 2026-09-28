@@ -14,6 +14,7 @@ Frontend administrativo para [`base-golang`](../../golang/base-golang), construi
 - Edición del perfil y cambio seguro de contraseña.
 - Manejo de errores `application/problem+json` de la API.
 - Diseño responsivo para escritorio, tablet y móvil.
+- Panel lateral de asistente IA, desacoplado y listo para conectar con Mastra.
 
 ## Requisitos
 
@@ -35,9 +36,13 @@ Variables disponibles:
 ```env
 BACKEND_URL=http://localhost:8080
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+AI_CHAT_ENDPOINT=
+AI_CHAT_API_KEY=
 ```
 
 `BACKEND_URL` solo se utiliza en el servidor de Next.js. `NEXT_PUBLIC_BACKEND_URL` se usa para iniciar la redirección del login de Google.
+
+El chat funciona en modo de preparación cuando `AI_CHAT_ENDPOINT` está vacío. Para conectarlo, configura un endpoint server-side que reciba `{ messages }` y devuelva `{ message }` o `{ text }`; `AI_CHAT_API_KEY` se envía como Bearer token sin exponerse al navegador. Esta frontera permite agregar después un adaptador con `@mastra/client-js` o streaming con `@mastra/ai-sdk` sin modificar el panel.
 
 ## Integración con el backend
 

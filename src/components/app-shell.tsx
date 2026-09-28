@@ -4,6 +4,7 @@ import { initials } from "@/lib/format";
 import {
   ChevronDown,
   CircleUserRound,
+  Bot,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -15,6 +16,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "./session-provider";
+import { AIChatPanel } from "./ai-chat-panel";
 
 const navigation = [
   { href: "/dashboard", label: "Resumen", icon: LayoutDashboard },
@@ -25,6 +27,7 @@ const navigation = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const pathname = usePathname();
   const { user, loading, logout } = useSession();
 
@@ -58,6 +61,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
+        <p className="nav-caption ai-nav-caption">INTELIGENCIA</p>
+        <button
+          className={`nav-item nav-button ${chatOpen ? "active" : ""}`}
+          onClick={() => { setChatOpen(true); setMenuOpen(false); }}
+          aria-expanded={chatOpen}
+          aria-controls="ai-chat-panel"
+        >
+          <Bot size={19} strokeWidth={chatOpen ? 2.4 : 1.8} />
+          <span>Asistente IA</span>
+          <small>Beta</small>
+        </button>
+
         <div className="sidebar-footer">
           <div className="avatar avatar-small">{initials(user?.name)}</div>
           <div className="sidebar-user-copy">
@@ -89,6 +104,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
         <main className="page-content">{children}</main>
       </div>
+      <div id="ai-chat-panel"><AIChatPanel open={chatOpen} onClose={() => setChatOpen(false)} /></div>
     </div>
   );
 }
