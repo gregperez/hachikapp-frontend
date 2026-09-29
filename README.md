@@ -36,15 +36,16 @@ Variables disponibles:
 ```env
 BACKEND_URL=http://localhost:8080
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
-AI_CHAT_ENDPOINT=
+AI_CHAT_ENDPOINT=http://localhost:4111/v1/chat
 AI_CHAT_API_KEY=
+ACTOR_CONTEXT_SECRET=
 ```
 
 `BACKEND_URL` solo se utiliza en el servidor de Next.js. `NEXT_PUBLIC_BACKEND_URL` se usa para iniciar la redirección del login de Google.
 
-El chat funciona en modo de preparación cuando `AI_CHAT_ENDPOINT` está vacío. Para conectarlo, configura un endpoint server-side que reciba `{ messages }` y devuelva `{ message }` o `{ text }`; `AI_CHAT_API_KEY` se envía como Bearer token sin exponerse al navegador. Esta frontera permite agregar después un adaptador con `@mastra/client-js` o streaming con `@mastra/ai-sdk` sin modificar el panel.
+El chat funciona en modo de preparación cuando `AI_CHAT_ENDPOINT` está vacío. Para conectarlo, arranca `base-agent` y copia `MASTRA_SERVICE_TOKEN` en `AI_CHAT_API_KEY` y el mismo `ACTOR_CONTEXT_SECRET`. El BFF `POST /api/ai/chat` valida la sesión, firma el actor y reenvía SSE; el navegador nunca recibe la clave del modelo ni la credencial de servicio.
 
-La decisión y el plan de implementación están documentados en [docs/mastra-api-integration.md](docs/mastra-api-integration.md).
+La decisión y el runbook están en [docs/mastra-api-integration.md](docs/mastra-api-integration.md) y [docs/runbook-ai.md](docs/runbook-ai.md).
 
 ## Integración con el backend
 

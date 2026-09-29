@@ -16,7 +16,7 @@ asignado completo, comprobar deriva y respetar alcance y dependencias.
 | [005](./005-persistir-y-consultar-auditoria.md) | Auditoría administrativa consultable | P1 | L | 002 | DONE — spot-check 2026-09-28 |
 | [006](./006-agregar-configuracion-tipificada.md) | Configuración general tipificada | P2 | L | 002, 005 | DONE — spot-check 2026-09-28 |
 | [007](./007-crear-catalogo-integraciones.md) | Catálogo modular de integraciones | P2 | M | 002, 006 | DONE |
-| [008](./008-integrar-api-mastra.md) | API Mastra independiente integrada | P2 | L | 001, 002, 005, 007 | IN PROGRESS |
+| [008](./008-integrar-api-mastra.md) | API Mastra independiente integrada | P2 | L | 001, 002, 005, 007 | DONE |
 
 Estados válidos: `TODO`, `IN PROGRESS`, `DONE`, `DEFERRED: <motivo>`,
 `BLOCKED: <motivo>` y `REJECTED: <motivo>`.
@@ -31,8 +31,9 @@ El 2026-09-28 se realizó un spot-check de los planes 001–006 sobre
 - Backend: `make fmt-check`, `make test` y `make openapi-lint`, todos con exit 0.
 
 El plan 007 aterrizó el catálogo `/dashboard/settings/integrations` con
-adaptadores sanitizados de Google OIDC y Mastra. El plan 008 está en curso
-en `base-agent` (OpenAI) y el BFF de Base Front.
+adaptadores sanitizados de Google OIDC y Mastra. El plan 008 crea `base-agent`
+(OpenAI, `POST /v1/chat` autenticado, SSE `X-Base-Stream: v1`, tool read-only
+`list-roles`) y el BFF/panel de streaming en Base Front.
 
 ## Dependencias
 

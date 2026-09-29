@@ -65,34 +65,28 @@ base-front (Next.js)
 - No confiar en instrucciones del modelo como autorización.
 - Mantener auditoría de las acciones sensibles iniciadas desde el asistente.
 
-## Integración inicial
+## Integración actual (plan 008)
 
-El adaptador existente utiliza estas variables:
+El runtime vive en el repositorio sibling `base-agent` (TypeScript/Mastra, OpenAI
+`openai/gpt-5-mini` por defecto). Base Front valida la sesión y firma un contexto
+de actor HMAC de 5 minutos. El access token viaja como `X-Actor-Authorization`;
+el refresh token no se envía.
 
 ```env
-AI_CHAT_ENDPOINT=https://ai.example.com/chat
-AI_CHAT_API_KEY=replace-with-a-secret
+AI_CHAT_ENDPOINT=http://localhost:4111/v1/chat
+AI_CHAT_API_KEY=replace-with-the-same-MASTRA_SERVICE_TOKEN
+ACTOR_CONTEXT_SECRET=replace-with-the-same-secret-as-base-agent
 ```
 
-La primera versión de la API Mastra deberá aceptar:
+`POST /v1/chat` acepta `{ messages, conversationId? }`. Con `X-Base-Stream: v1`
+responde SSE (`event: delta|done|error`). Sin esa cabecera responde JSON
+`{ configured, message }` para el modo de preparación y compatibilidad.
 
-```json
-{
-  "messages": [
-    { "role": "user", "content": "Ayúdame a definir un rol" }
-  ]
-}
-```
+La primera herramienta es `list-roles` (`GET /v1/roles`). Go revalida JWT y
+`ROLES:read`. No hay tools mutables ni acceso a PostgreSQL.
 
-Y devolver temporalmente una respuesta JSON compatible:
-
-```json
-{
-  "message": "Respuesta del asistente"
-}
-```
-
-Este contrato es transitorio. La integración definitiva deberá usar streaming mediante `@mastra/client-js` o `@mastra/ai-sdk`, manteniendo `/api/ai/chat` como frontera server-side de Base Front.
+Rotación y fallo: [docs/runbook-ai.md](runbook-ai.md) y el runbook de
+`base-agent`.
 
 ## Identidad y autorización
 
@@ -140,7 +134,7 @@ Este contrato es transitorio. La integración definitiva deberá usar streaming 
 - Dar acceso directo de Mastra a las tablas de PostgreSQL de `base-golang`.
 - Permitir que el agente modifique usuarios, roles o permisos sin confirmación.
 - Persistir conversaciones indefinidamente.
-- Seleccionar un proveedor o modelo definitivo antes de evaluar coste y requisitos de privacidad.
+- Seleccionar un proveedor o modelo distinto de OpenAI sin un ADR nuevo.
 
 ## Criterios para considerar completa la primera integración
 
