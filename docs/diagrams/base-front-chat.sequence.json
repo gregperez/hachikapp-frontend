@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Base Front — Chat SSE",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 620],
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "session",
+        "label": "Sesión",
+        "focus": ["panel", "bff", "go"],
+        "note": "Sin cookie de access el BFF responde 401. Go confirma /v1/users/me."
+      },
+      {
+        "id": "forward",
+        "label": "Reenvío",
+        "focus": ["bff", "mastra"],
+        "note": "Next firma el HMAC y envía el access token como X-Actor-Authorization."
+      },
+      {
+        "id": "ui",
+        "label": "Panel",
+        "focus": ["mastra", "bff", "panel"],
+        "note": "AbortController cancela el fetch; el usuario ve deltas o un error recuperable."
+      }
+    ]
+  },
+  "participants": [
+    { "id": "panel", "type": "frontend", "label": "AIChatPanel", "sublabel": "AbortController" },
+    { "id": "bff", "type": "frontend", "label": "/api/ai/chat", "sublabel": "BFF" },
+    { "id": "go", "type": "backend", "label": "base-golang", "sublabel": "sesión" },
+    { "id": "mastra", "type": "backend", "label": "base-agent", "sublabel": "SSE" }
+  ],
+  "segments": [
+    { "from": 140, "to": 280, "label": "Sesión" },
+    { "from": 290, "to": 430, "label": "Mastra" },
+    { "from": 440, "to": 520, "label": "UI" }
+  ],
+  "messages": [
+    { "id": "send", "from": "panel", "to": "bff", "y": 160, "label": "POST /api/ai/chat", "variant": "emphasis" },
+    { "id": "me", "from": "bff", "to": "go", "y": 195, "label": "GET /v1/users/me", "variant": "security" },
+    { "id": "me-ok", "from": "go", "to": "bff", "y": 225, "label": "usuario + permisos", "variant": "return" },
+    { "id": "upstream", "from": "bff", "to": "mastra", "y": 310, "label": "HMAC + POST /v1/chat", "variant": "emphasis" },
+    { "id": "delta", "from": "mastra", "to": "bff", "y": 360, "label": "event: delta", "variant": "return" },
+    { "id": "pipe", "from": "bff", "to": "panel", "y": 395, "label": "SSE", "variant": "return" },
+    { "id": "done", "from": "mastra", "to": "bff", "y": 455, "label": "event: done", "variant": "return" },
+    { "id": "render", "from": "bff", "to": "panel", "y": 490, "label": "mensaje completo", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "bff", "from": 155, "to": 500, "type": "frontend" },
+    { "participant": "go", "from": 190, "to": 230, "type": "backend" },
+    { "participant": "mastra", "from": 305, "to": 465, "type": "backend" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Cancelación",
+      "items": [
+        "Detener aborta el fetch del panel",
+        "El BFF propaga request.signal hacia Mastra"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Modo preparación",
+      "items": [
+        "Sin AI_CHAT_ENDPOINT el BFF responde JSON configured: false",
+        "El catálogo marca Mastra como Sin configurar"
+      ]
+    }
+  ]
+}

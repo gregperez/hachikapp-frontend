@@ -45,7 +45,7 @@ ACTOR_CONTEXT_SECRET=
 
 El chat funciona en modo de preparación cuando `AI_CHAT_ENDPOINT` está vacío. Para conectarlo, arranca `base-agent` y copia `MASTRA_SERVICE_TOKEN` en `AI_CHAT_API_KEY` y el mismo `ACTOR_CONTEXT_SECRET`. El BFF `POST /api/ai/chat` valida la sesión, firma el actor y reenvía SSE; el navegador nunca recibe la clave del modelo ni la credencial de servicio.
 
-La decisión y el runbook están en [docs/mastra-api-integration.md](docs/mastra-api-integration.md) y [docs/runbook-ai.md](docs/runbook-ai.md).
+La decisión, el runbook y los diagramas están en [docs/mastra-api-integration.md](docs/mastra-api-integration.md), [docs/runbook-ai.md](docs/runbook-ai.md) y [docs/diagrams/README.md](docs/diagrams/README.md).
 
 ## Integración con el backend
 
@@ -69,3 +69,10 @@ npm run build
 ```
 
 `npm test` ejecuta Vitest en modo no interactivo. Usa `npm run test:watch` para el modo observador.
+
+## Diagramas
+
+- [Procesos de Base Console](docs/diagrams/base-front-architecture.html)
+- [Chat SSE](docs/diagrams/base-front-chat.html)
+- [Índice y regeneración](docs/diagrams/README.md)
+

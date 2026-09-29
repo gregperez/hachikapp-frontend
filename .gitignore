@@ -23,3 +23,7 @@ pnpm-debug.log*
 
 # tests
 /coverage
+
+# Archify visual-check sidecars and delivery scratch (regenerate locally)
+docs/diagrams/*.visual-check.*
+docs/diagrams/.archify-delivery-*/

@@ -6,7 +6,7 @@
 
 ## Contexto
 
-Base Console cuenta con un panel lateral de chat y una ruta server-side en Next.js (`POST /api/ai/chat`). Actualmente, cuando no existe un servicio de inteligencia artificial configurado, el chat funciona en modo de preparación y explica que aún debe conectarse un agente.
+Base Console cuenta con un panel lateral de chat y una ruta server-side en Next.js (`POST /api/ai/chat`). Si `AI_CHAT_ENDPOINT` está vacío, el chat permanece en modo de preparación; con `base-agent` en marcha el BFF reenvía el stream.
 
 El sistema ya separa dos responsabilidades principales:
 
@@ -65,7 +65,7 @@ base-front (Next.js)
 - No confiar en instrucciones del modelo como autorización.
 - Mantener auditoría de las acciones sensibles iniciadas desde el asistente.
 
-## Integración actual (plan 008)
+## Integración actual
 
 El runtime vive en el repositorio sibling `base-agent` (TypeScript/Mastra, OpenAI
 `openai/gpt-5-mini` por defecto). Base Front valida la sesión y firma un contexto
@@ -98,53 +98,12 @@ Rotación y fallo: [docs/runbook-ai.md](runbook-ai.md) y el runbook de
 - Las acciones destructivas o sensibles requerirán confirmación explícita en la interfaz.
 - Los prompts, trazas y memorias no almacenarán contraseñas, tokens ni secretos.
 
-## Fases previstas
-
-### Fase 1: API mínima
-
-- Crear el proyecto Mastra separado.
-- Elegir proveedor y modelo mediante variables de entorno.
-- Implementar un agente general sin herramientas mutables.
-- Exponer un endpoint de chat autenticado.
-- Conectar `AI_CHAT_ENDPOINT` y conservar el contrato JSON actual.
-
-### Fase 2: streaming y conversaciones
-
-- Incorporar el protocolo de streaming compatible con AI SDK.
-- Mostrar respuestas incrementales en el panel.
-- Agregar identificadores de conversación y persistencia con una política de retención explícita.
-- Implementar cancelación, reintentos y límites de uso.
-
-### Fase 3: herramientas del sistema
-
-- Agregar inicialmente herramientas de solo lectura.
-- Consultar usuarios, roles y estado operativo mediante `base-golang`.
-- Propagar identidad y permisos de forma verificable.
-- Incorporar confirmación humana y auditoría antes de habilitar mutaciones.
-
-### Fase 4: conocimiento y evaluación
-
-- Evaluar RAG únicamente si existe una fuente documental concreta.
-- Versionar instrucciones y conjuntos de evaluación.
-- Medir calidad, latencia, errores y coste antes de ampliar capacidades.
-
-## Fuera de alcance por ahora
+## Fuera de alcance
 
 - Instalar Mastra dentro del proyecto Next.js.
 - Dar acceso directo de Mastra a las tablas de PostgreSQL de `base-golang`.
-- Permitir que el agente modifique usuarios, roles o permisos sin confirmación.
-- Persistir conversaciones indefinidamente.
+- Tools mutables, RAG y memoria durable: requieren un ADR nuevo.
 - Seleccionar un proveedor o modelo distinto de OpenAI sin un ADR nuevo.
-
-## Criterios para considerar completa la primera integración
-
-- La API Mastra se despliega y escala de forma independiente.
-- Base Front recibe respuestas reales sin exponer secretos en el navegador.
-- Las solicitudes sin sesión válida son rechazadas.
-- Los fallos de Mastra no afectan las funciones administrativas normales.
-- Existen timeouts, límites de tamaño y manejo explícito de errores.
-- Logs y trazas correlacionan solicitudes sin almacenar tokens o contraseñas.
-- La documentación de despliegue explica cómo configurar `AI_CHAT_ENDPOINT` y rotar `AI_CHAT_API_KEY`.
 
 ## Referencias
 
