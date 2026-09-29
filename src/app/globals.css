@@ -147,6 +147,8 @@ a { color: inherit; text-decoration: none; }
 .status-badge { width: max-content; display: inline-flex !important; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 99px; font-size: 10px !important; font-weight: 750; }
 .status-badge.success { color: #157451; background: var(--green-soft); }
 .status-badge.success i { background: #27a976; }
+.status-badge.warning { color: #9a5b12; background: var(--amber-soft); }
+.status-badge.warning i { background: var(--amber); }
 .status-badge.neutral { color: #667085; background: #eff1f4; }
 .status-badge.neutral i { background: #98a2b3; }
 .date-cell { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: 5px; }
@@ -224,6 +226,8 @@ select:focus { border-color: #9e94f2; box-shadow: 0 0 0 3px #efedff; }
 select:disabled { color: #8d95a5; background: #f5f6f8; }
 .field-error { color: var(--danger); font-size: 11px; font-weight: 600; }
 .settings-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 20px; }
+.integration-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+.integration-card-body { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 22px 20px; }
 .settings-preview-card { margin: 0 22px 22px; padding: 22px; color: #fff; background: linear-gradient(145deg, #11182c 0%, #192444 100%); border-radius: 14px; }
 .settings-preview-card p { margin: 14px 0 0; color: #b7c0d5; font-size: 12px; }
 .form-grid { display: grid; gap: 14px; }
@@ -377,6 +381,7 @@ html[data-theme="dark"] .button.secondary { color: #d5dced; background: #1b2438;
   .role-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .profile-grid { grid-template-columns: 1fr; }
   .settings-layout { grid-template-columns: 1fr; }
+  .integration-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 860px) {

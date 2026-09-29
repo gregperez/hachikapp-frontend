@@ -75,6 +75,7 @@ describe("AppShell navigation", () => {
     expect(screen.getByRole("link", { name: "Roles y permisos" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Auditoría" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Configuración" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Integraciones" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Mi perfil" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Cerrar sesión" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Menú de cuenta" })).toBeInTheDocument();
@@ -87,6 +88,7 @@ describe("AppShell navigation", () => {
     expect(screen.queryByRole("link", { name: "Roles y permisos" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Auditoría" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Configuración" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Integraciones" })).not.toBeInTheDocument();
     expect(screen.getByText("Administración")).toBeInTheDocument();
   });
 

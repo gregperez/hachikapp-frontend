@@ -29,7 +29,7 @@ describe("visibleNavSections", () => {
 
   it("shows every administrative link to an admin", () => {
     const admin = visibleNavSections(adminUser()).find((section) => section.id === "admin");
-    expect(admin?.items.map((item) => item.id)).toEqual(["users", "roles", "audit", "settings-general"]);
+    expect(admin?.items.map((item) => item.id)).toEqual(["users", "roles", "audit", "settings-general", "settings-integrations"]);
   });
 });
 

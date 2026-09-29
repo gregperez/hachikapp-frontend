@@ -9,17 +9,30 @@ asignado completo, comprobar deriva y respetar alcance y dependencias.
 
 | Plan | Resultado | Prioridad | Esfuerzo | Depende de | Estado |
 |---|---|---:|---:|---|---|
-| [001](./001-establecer-baseline-pruebas-frontend.md) | Baseline de pruebas frontend | P1 | M | — | DONE |
-| [002](./002-modularizar-navegacion-por-permisos.md) | Navegación modular y autorizada | P1 | M | 001 | DONE |
-| [003](./003-crear-menu-cuenta-accesible.md) | Menú de cuenta accesible | P1 | S | 001, 002 | DONE |
-| [004](./004-gestionar-sesiones-activas.md) | Sesiones activas autogestionables | P1 | L | 001, 002 | DONE |
-| [005](./005-persistir-y-consultar-auditoria.md) | Auditoría administrativa consultable | P1 | L | 002 | DONE |
-| [006](./006-agregar-configuracion-tipificada.md) | Configuración general tipificada | P2 | L | 002, 005 | DONE |
-| [007](./007-crear-catalogo-integraciones.md) | Catálogo modular de integraciones | P2 | M | 002, 006 | TODO |
-| [008](./008-integrar-api-mastra.md) | API Mastra independiente integrada | P2 | L | 001, 002, 005, 007 | TODO |
+| [001](./001-establecer-baseline-pruebas-frontend.md) | Baseline de pruebas frontend | P1 | M | — | DONE — spot-check 2026-09-28 |
+| [002](./002-modularizar-navegacion-por-permisos.md) | Navegación modular y autorizada | P1 | M | 001 | DONE — spot-check 2026-09-28 |
+| [003](./003-crear-menu-cuenta-accesible.md) | Menú de cuenta accesible | P1 | S | 001, 002 | DONE — spot-check 2026-09-28 |
+| [004](./004-gestionar-sesiones-activas.md) | Sesiones activas autogestionables | P1 | L | 001, 002 | DONE — spot-check 2026-09-28 |
+| [005](./005-persistir-y-consultar-auditoria.md) | Auditoría administrativa consultable | P1 | L | 002 | DONE — spot-check 2026-09-28 |
+| [006](./006-agregar-configuracion-tipificada.md) | Configuración general tipificada | P2 | L | 002, 005 | DONE — spot-check 2026-09-28 |
+| [007](./007-crear-catalogo-integraciones.md) | Catálogo modular de integraciones | P2 | M | 002, 006 | DONE |
+| [008](./008-integrar-api-mastra.md) | API Mastra independiente integrada | P2 | L | 001, 002, 005, 007 | IN PROGRESS |
 
-Estados válidos: `TODO`, `IN PROGRESS`, `DONE`, `BLOCKED: <motivo>` y
-`REJECTED: <motivo>`.
+Estados válidos: `TODO`, `IN PROGRESS`, `DONE`, `DEFERRED: <motivo>`,
+`BLOCKED: <motivo>` y `REJECTED: <motivo>`.
+
+## Última reconciliación
+
+El 2026-09-28 se realizó un spot-check de los planes 001–006 sobre
+`base-front@9cadf64` y `base-golang@a984805`:
+
+- Frontend: `npm test` (63 pruebas), `npm run lint`, `npm run typecheck` y
+  `npm run build`, todos con exit 0.
+- Backend: `make fmt-check`, `make test` y `make openapi-lint`, todos con exit 0.
+
+El plan 007 aterrizó el catálogo `/dashboard/settings/integrations` con
+adaptadores sanitizados de Google OIDC y Mastra. El plan 008 está en curso
+en `base-agent` (OpenAI) y el BFF de Base Front.
 
 ## Dependencias
 
@@ -67,4 +80,3 @@ rotación de secretos y migración de bases reales requieren autorización human
   vacío de la plantilla.
 - Tres niveles de sidebar: usar como máximo sección, enlace y tabs dentro de la
   página para evitar navegación profunda.
-
