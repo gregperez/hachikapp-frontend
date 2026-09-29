@@ -1,6 +1,7 @@
 "use client";
 
-import { Bot, CornerDownLeft, Send, Sparkles, UserRound, X } from "lucide-react";
+import { consumeSse } from "@/lib/ai-stream";
+import { Bot, CornerDownLeft, Send, Sparkles, Square, UserRound, X } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 type ChatMessage = {
@@ -26,8 +27,11 @@ export function AIChatPanel({ open, onClose }: { open: boolean; onClose: () => v
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [configured, setConfigured] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const conversationId = useRef(crypto.randomUUID());
 
   useEffect(() => {
     if (!open) return;
@@ -40,8 +44,12 @@ export function AIChatPanel({ open, onClose }: { open: boolean; onClose: () => v
   }, [open, onClose]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    scrollRef.current?.scrollTo?.({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, sending]);
+
+  function stop() {
+    abortRef.current?.abort();
+  }
 
   async function submit(event?: FormEvent) {
     event?.preventDefault();
@@ -49,32 +57,64 @@ export function AIChatPanel({ open, onClose }: { open: boolean; onClose: () => v
     if (!content || sending) return;
 
     const userMessage: ChatMessage = { id: crypto.randomUUID(), role: "user", content };
-    const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
+    const assistantId = crypto.randomUUID();
+    const history = [...messages, userMessage];
+    setMessages([...history, { id: assistantId, role: "assistant", content: "" }]);
     setInput("");
     setSending(true);
+    setError(null);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
+      const payloadMessages = history
+        .filter((message) => message.id !== "welcome")
+        .map(({ role, content: text }) => ({ role, content: text }));
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages.map(({ role, content: text }) => ({ role, content: text })) }),
+        body: JSON.stringify({ messages: payloadMessages, conversationId: conversationId.current }),
+        signal: controller.signal,
       });
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("text/event-stream")) {
+        if (!response.ok) throw new Error("El servicio de IA rechazó la solicitud.");
+        setConfigured(true);
+        const result = await consumeSse(response, (delta) => {
+          setMessages((current) => current.map((message) => (
+            message.id === assistantId ? { ...message, content: `${message.content}${delta}` } : message
+          )));
+        }, controller.signal);
+        setMessages((current) => current.map((message) => (
+          message.id === assistantId ? { ...message, content: result.message || message.content } : message
+        )));
+        return;
+      }
       const payload = (await response.json().catch(() => null)) as { message?: string; configured?: boolean; detail?: string } | null;
       if (!response.ok) throw new Error(payload?.detail || "No fue posible contactar al asistente.");
       setConfigured(payload?.configured ?? true);
-      setMessages((current) => [...current, {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: payload?.message || "El asistente no devolvió contenido.",
-      }]);
-    } catch (error) {
-      setMessages((current) => [...current, {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: error instanceof Error ? error.message : "El asistente no está disponible en este momento.",
-      }]);
+      setMessages((current) => current.map((message) => (
+        message.id === assistantId
+          ? { ...message, content: payload?.message || "El asistente no devolvió contenido." }
+          : message
+      )));
+    } catch (caught) {
+      if (controller.signal.aborted) {
+        setMessages((current) => current.map((message) => (
+          message.id === assistantId
+            ? { ...message, content: message.content || "Generación cancelada." }
+            : message
+        )));
+        return;
+      }
+      const detail = caught instanceof Error ? caught.message : "El asistente no está disponible en este momento.";
+      setError(detail);
+      setMessages((current) => current.map((message) => (
+        message.id === assistantId ? { ...message, content: message.content || detail } : message
+      )));
     } finally {
+      abortRef.current = null;
       setSending(false);
     }
   }
@@ -108,10 +148,11 @@ export function AIChatPanel({ open, onClose }: { open: boolean; onClose: () => v
           {messages.map((message) => (
             <div className={`chat-message ${message.role}`} key={message.id}>
               <span>{message.role === "assistant" ? <Bot size={15} /> : <UserRound size={15} />}</span>
-              <div>{message.content}</div>
+              <div>
+                {message.content || (sending ? <span className="typing-dots"><i /><i /><i /></span> : null)}
+              </div>
             </div>
           ))}
-          {sending && <div className="chat-message assistant"><span><Bot size={15} /></span><div className="typing-dots"><i /><i /><i /></div></div>}
         </div>
 
         {messages.length === 1 && (
@@ -119,6 +160,8 @@ export function AIChatPanel({ open, onClose }: { open: boolean; onClose: () => v
             {suggestions.map((suggestion) => <button key={suggestion} onClick={() => applySuggestion(suggestion)}>{suggestion}</button>)}
           </div>
         )}
+
+        {error && <p className="chat-error" role="alert">{error}</p>}
 
         <form className="chat-composer" onSubmit={(event) => void submit(event)}>
           <textarea
@@ -136,7 +179,11 @@ export function AIChatPanel({ open, onClose }: { open: boolean; onClose: () => v
             placeholder="Escribe un mensaje…"
             aria-label="Mensaje para el asistente"
           />
-          <button type="submit" disabled={!input.trim() || sending} aria-label="Enviar mensaje"><Send size={18} /></button>
+          {sending ? (
+            <button type="button" onClick={stop} aria-label="Detener generación"><Square size={16} /></button>
+          ) : (
+            <button type="submit" disabled={!input.trim()} aria-label="Enviar mensaje"><Send size={18} /></button>
+          )}
           <small><CornerDownLeft size={11} /> Enter para enviar · Shift + Enter para nueva línea</small>
         </form>
       </aside>
