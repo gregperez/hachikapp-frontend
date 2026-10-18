@@ -194,6 +194,17 @@ export function sanitizeWeightInput(raw: string): string {
   return `${integer},${decimals}`;
 }
 
+/** Chip numbers are digits only (ISO 11784 chips have 15). */
+export function sanitizeChipInput(raw: string): string {
+  return raw.replace(/\D/g, "").slice(0, 15);
+}
+
+/** Today as YYYY-MM-DD in the browser's time zone (toISOString would use UTC). */
+export function localDateISO(date: Date = new Date()): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 export function formToRequest(form: PetForm): PetRequest {
   const weight = parseWeight(form.weightKg);
   const secondOwner = { fullName: form.secondOwnerFullName.trim(), phone: form.secondOwnerPhone.trim() };
@@ -234,6 +245,31 @@ export const PET_FORM_STEPS = [
   { id: "owners", title: "Dueños", hint: "Cómo contactarte" },
   { id: "visibility", title: "Perfil público", hint: "Qué ve quien la encuentre" },
 ] as const;
+
+/** API/validation field name for each form value, used to clear an error when the value changes. */
+export const FORM_ERROR_FIELDS: Partial<Record<keyof PetForm, string>> = {
+  name: "name",
+  species: "species",
+  breed: "breed",
+  color: "color",
+  sex: "sex",
+  birthDate: "birthDate",
+  chipNumber: "chipNumber",
+  weightKg: "weightKg",
+  size: "size",
+  distinctiveFeatures: "distinctiveFeatures",
+  allergies: "health.allergies",
+  surgeries: "health.surgeries",
+  specialConditions: "health.specialConditions",
+  temperament: "health.temperament",
+  ownerFullName: "owner.fullName",
+  ownerAddress: "owner.address",
+  ownerComuna: "owner.comuna",
+  ownerPhone: "owner.phone",
+  ownerPhoneAlt: "owner.phoneAlt",
+  secondOwnerFullName: "secondOwner.fullName",
+  secondOwnerPhone: "secondOwner.phone",
+};
 
 /** Index of the form step that holds an API or client field (e.g. "owner.phone" → 2). */
 export function stepOfField(field: string): number {
@@ -347,15 +383,24 @@ const MAX_PHOTO_SIDE = 1280;
 /** Scales the image down to 1280 px and re-encodes it as JPEG under 1 MB. */
 export async function preparePetPhoto(file: File): Promise<Blob> {
   if (!file.type.startsWith("image/")) {
-    throw new Error("Elige una imagen (JPEG, PNG o WebP).");
+    throw new Error("Elige una imagen (JPEG o PNG).");
   }
-  const bitmap = await createImageBitmap(file);
+  let bitmap: ImageBitmap;
+  try {
+    // Apply the camera's EXIF rotation so phone photos stay upright.
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    throw new Error("No pudimos leer esa imagen. Prueba con una foto JPEG o PNG.");
+  }
   const scale = Math.min(1, MAX_PHOTO_SIDE / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(bitmap.width * scale);
   canvas.height = Math.round(bitmap.height * scale);
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Tu navegador no pudo procesar la imagen.");
+  // JPEG has no transparency: paint a white background so transparent PNGs do not turn black.
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
   context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
   for (const quality of [0.86, 0.75, 0.62, 0.5]) {

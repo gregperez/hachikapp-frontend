@@ -510,6 +510,8 @@ html[data-theme="dark"] .modal-form > label,
 html[data-theme="dark"] .form-grid label,
 html[data-theme="dark"] .stack-form label { color: var(--ink); }
 html[data-theme="dark"] .button.secondary { color: var(--ink); background: var(--subtle); border-color: var(--line-strong); }
+/* The dark danger fill is light; dark text keeps 7.6:1 (white would be 2.0:1). */
+html[data-theme="dark"] .button.danger { color: var(--canvas); }
 
 @media (max-width: 1120px) {
   .metric-grid { grid-template-columns: repeat(2, 1fr); }

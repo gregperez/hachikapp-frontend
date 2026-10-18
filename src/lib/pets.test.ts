@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_VISIBILITY,
   PUBLIC_FIELD_GROUPS,
@@ -10,6 +10,8 @@ import {
   petAge,
   petPhotoSrc,
   petToForm,
+  localDateISO,
+  preparePetPhoto,
   errorsForStep,
   stepOfField,
   withoutStep,
@@ -162,5 +164,38 @@ describe("sanitizeWeightInput", () => {
 
   it("limits the integer part to three digits", () => {
     expect(sanitizeWeightInput("12345")).toBe("123");
+  });
+});
+
+describe("localDateISO", () => {
+  it("uses the local calendar day, not UTC", () => {
+    // 21:30 in Santiago (UTC-3) is already the next day in UTC.
+    const lateEvening = new Date(2026, 9, 18, 21, 30);
+    expect(localDateISO(lateEvening)).toBe("2026-10-18");
+  });
+});
+
+describe("preparePetPhoto", () => {
+  const original = globalThis.createImageBitmap;
+  afterEach(() => {
+    globalThis.createImageBitmap = original;
+  });
+
+  it("explains in Spanish when the browser cannot read the image", async () => {
+    globalThis.createImageBitmap = vi.fn(async () => {
+      throw new Error("The source image could not be decoded.");
+    }) as unknown as typeof createImageBitmap;
+    const file = new File([new Uint8Array([1, 2, 3])], "IMG_0001.HEIC", { type: "image/heic" });
+    await expect(preparePetPhoto(file)).rejects.toThrow("No pudimos leer esa imagen. Prueba con una foto JPEG o PNG.");
+  });
+
+  it("asks the browser to apply the photo's own orientation", async () => {
+    const spy = vi.fn(async () => {
+      throw new Error("stop after the call");
+    });
+    globalThis.createImageBitmap = spy as unknown as typeof createImageBitmap;
+    const file = new File([new Uint8Array([1])], "foto.jpg", { type: "image/jpeg" });
+    await preparePetPhoto(file).catch(() => undefined);
+    expect(spy).toHaveBeenCalledWith(file, { imageOrientation: "from-image" });
   });
 });

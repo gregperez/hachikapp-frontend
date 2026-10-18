@@ -17,7 +17,7 @@ import {
 import type { ApiEnvelope, Pet, PetVisibility } from "@/lib/types";
 import { Camera, Cpu, Edit3, Eye, HeartPulse, IdCard, ImageOff, Trash2, UserRound } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChangeEvent, Suspense, useEffect, useRef, useState } from "react";
 
 type NoticeState = { message: string; kind: "success" | "error" } | null;
@@ -32,6 +32,7 @@ function PetDetail() {
   const { id } = useParams<{ id: string }>();
   const params = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const [pet, setPet] = useState<Pet | null>(null);
   const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState<NoticeState>(null);
@@ -47,9 +48,15 @@ function PetDetail() {
   }, [id]);
 
   useEffect(() => {
-    if (params.get("created")) setNotice({ message: "¡Listo! La ficha quedó creada. Agrega una foto para que la reconozcan fácilmente.", kind: "success" });
-    else if (params.get("saved")) setNotice({ message: "Los cambios quedaron guardados.", kind: "success" });
-  }, [params]);
+    const created = params.get("created");
+    const saved = params.get("saved");
+    if (!created && !saved) return;
+    setNotice(created
+      ? { message: "¡Listo! La ficha quedó creada. Agrega una foto para que la reconozcan fácilmente.", kind: "success" }
+      : { message: "Los cambios quedaron guardados.", kind: "success" });
+    // Drop the one-time flag so a reload does not show the notice again.
+    router.replace(pathname);
+  }, [params, pathname, router]);
 
   async function onPhotoSelected(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];

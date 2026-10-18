@@ -47,10 +47,10 @@ export function errorMessage(error: unknown): string {
       "You do not have permission to perform this action": "No tienes permiso para realizar esta acción.",
       "The resource already exists or conflicts with current state": "El recurso ya existe o entra en conflicto con el estado actual.",
       "The settings were updated by someone else": "La configuración fue actualizada por otra persona.",
-      "The chip number is already registered": "Ese número de chip ya está registrado en Hachikapp. Revisa los dígitos.",
+      "Another pet of this account already uses this chip number": "Ya registraste otra mascota con ese número de chip. Revisa los dígitos.",
       "The pet limit for this account was reached": "Llegaste al máximo de mascotas para esta cuenta.",
       "The pet was updated by someone else": "La ficha cambió mientras la editabas. Recárgala para ver la versión más reciente.",
-      "The photo must be a JPEG, PNG or WebP image up to 1 MiB": "La foto debe ser JPEG, PNG o WebP y pesar menos de 1 MB.",
+      "The photo must be a JPEG or PNG image up to 1 MiB and 4096 px per side": "La foto debe ser JPEG o PNG, pesar menos de 1 MB y medir hasta 4096 px por lado.",
       "Pet contains invalid fields": "Revisa los datos marcados en el formulario.",
       "The requested resource was not found": "No encontramos lo que buscabas.",
     };

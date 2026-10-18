@@ -8,7 +8,10 @@ import {
   SPECIES_OPTIONS,
   PET_FORM_STEPS,
   VISIBILITY_OPTIONS,
+  FORM_ERROR_FIELDS,
   errorsForStep,
+  localDateISO,
+  sanitizeChipInput,
   sanitizeWeightInput,
   stepOfField,
   validatePetForm,
@@ -18,7 +21,7 @@ import {
 import type { PetPublicField, PetVisibility } from "@/lib/types";
 import { ArrowLeft, ArrowRight, Check, Eye, HeartPulse, IdCard, Plus, Save, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, KeyboardEvent, useState } from "react";
+import { FormEvent, KeyboardEvent, MouseEvent, useState } from "react";
 
 type Props = {
   initial: PetFormValues;
@@ -36,13 +39,22 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState(0);
   const [visited, setVisited] = useState(1);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateISO();
   const wizard = mode === "create";
   const isLast = step === PET_FORM_STEPS.length - 1;
   const stepsWithErrors = new Set(Object.keys(errors).map(stepOfField));
 
   function set<K extends keyof PetFormValues>(key: K, value: PetFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
+    const errorField = FORM_ERROR_FIELDS[key];
+    if (errorField) {
+      setErrors((current) => {
+        if (!current[errorField]) return current;
+        const rest = { ...current };
+        delete rest[errorField];
+        return rest;
+      });
+    }
   }
 
   function setVisibility(field: PetPublicField, visibility: PetVisibility) {
@@ -61,10 +73,11 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
   function showErrors(found: Record<string, string>, text: string) {
     setErrors(found);
     setMessage(text);
-    const first = Object.keys(found)[0];
-    if (first) {
-      setStep(stepOfField(first));
-      focusFirstError(found);
+    const steps = Object.keys(found).map(stepOfField);
+    if (steps.length > 0) {
+      const earliest = Math.min(...steps);
+      setStep(earliest);
+      focusFirstError(errorsForStep(found, earliest));
     }
   }
 
@@ -80,6 +93,7 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (saving) return;
     if (wizard && !isLast) {
       next();
       return;
@@ -92,15 +106,20 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
     setErrors({});
     setMessage("");
     setSaving(true);
+    let failed = true;
     try {
       const result = await onSubmit(values);
       if (result?.fieldErrors && Object.keys(result.fieldErrors).length > 0) {
         showErrors(result.fieldErrors, result.message || "Revisa los datos marcados.");
       } else if (result?.message) {
         setMessage(result.message);
+      } else {
+        // Success: the page is navigating away; keep the button disabled so a
+        // second click cannot create a duplicate or send a stale update.
+        failed = false;
       }
     } finally {
-      setSaving(false);
+      if (failed) setSaving(false);
     }
   }
 
@@ -113,7 +132,7 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
   return (
     <form className="pet-form" onSubmit={submit} noValidate>
       <nav id="pet-form-top" className="pet-steps" aria-label="Secciones de la ficha">
-        <p className="pet-steps-progress">Paso {step + 1} de {PET_FORM_STEPS.length}</p>
+        <p className="pet-steps-progress" aria-live="polite">Paso {step + 1} de {PET_FORM_STEPS.length}</p>
         <ol>
           {PET_FORM_STEPS.map((info, index) => {
             const completed = wizard && (index < step || index < visited - 1);
@@ -164,6 +183,7 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
                 <select {...fieldProps("sex")} value={values.sex} onChange={(event) => set("sex", event.target.value as PetFormValues["sex"])}>
                   {SEX_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
+                <FieldError name="sex" errors={errors} />
               </label>
               <label>Fecha de nacimiento
                 <input {...fieldProps("birthDate")} type="date" value={values.birthDate} max={today} min="1980-01-01" onChange={(event) => set("birthDate", event.target.value)} />
@@ -178,10 +198,11 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
                 <select {...fieldProps("size")} value={values.size} onChange={(event) => set("size", event.target.value as PetFormValues["size"])}>
                   {SIZE_OPTIONS.map((option) => <option key={option.value || "unset"} value={option.value}>{option.label}</option>)}
                 </select>
+                <FieldError name="size" errors={errors} />
               </label>
             </div>
             <label>Número de microchip
-              <input {...fieldProps("chipNumber")} inputMode="numeric" value={values.chipNumber} maxLength={20} onChange={(event) => set("chipNumber", event.target.value)} placeholder="15 dígitos, ej: 900123456789012" />
+              <input {...fieldProps("chipNumber")} inputMode="numeric" value={values.chipNumber} maxLength={15} onChange={(event) => set("chipNumber", sanitizeChipInput(event.target.value))} placeholder="15 dígitos, ej: 900123456789012" />
               <span className="form-hint inline">En Chile el microchip es obligatorio (Ley 21.020). Hachikapp lo complementa, no lo reemplaza.</span>
               <FieldError name="chipNumber" errors={errors} />
             </label>
@@ -286,8 +307,9 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
                     <div>
                       <strong id={`vis-${info.field}`}>{info.label}</strong>
                       {info.hint && <small>{info.hint}</small>}
+                      <FieldError name={`publicVisibility.${info.field}`} errors={errors} />
                     </div>
-                    <div className="segmented" role="radiogroup" aria-labelledby={`vis-${info.field}`}>
+                    <div className="segmented" role="radiogroup" id={fieldId(`publicVisibility.${info.field}`)} tabIndex={-1} aria-labelledby={`vis-${info.field}`}>
                       {VISIBILITY_OPTIONS.map((option) => (
                         <label key={option.value} className={values.publicVisibility[info.field] === option.value ? "selected" : ""}>
                           <input
@@ -320,15 +342,24 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
           <button type="button" className="button secondary" onClick={() => goTo(step + 1)}>Siguiente <ArrowRight size={16} /></button>
         )}
         {wizard && !isLast ? (
-          <button type="submit" className="button primary">Siguiente <ArrowRight size={16} /></button>
+          <button key="next" type="button" className="button primary" onClick={(event) => !isRepeatClick(event) && next()}>Siguiente <ArrowRight size={16} /></button>
         ) : (
-          <button className="button primary" type="submit" disabled={saving}>
+          <button key="submit" className="button primary" type="submit" disabled={saving} onClick={(event) => isRepeatClick(event) && event.preventDefault()}>
             {saving ? <span className="spinner spinner-light" /> : <Save size={17} />} {saving ? "Guardando…" : submitLabel}
           </button>
         )}
       </div>
     </form>
   );
+}
+
+/**
+ * The second click of a double click (detail > 1) lands on whatever button
+ * replaced the one clicked first; it must not skip a step or submit early.
+ * Keyboard activation reports detail 0 and is never ignored.
+ */
+function isRepeatClick(event: MouseEvent<HTMLButtonElement>) {
+  return event.detail > 1;
 }
 
 function fieldId(name: string) {
