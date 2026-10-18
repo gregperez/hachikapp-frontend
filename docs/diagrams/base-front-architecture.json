@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Base Console — Procesos",
+    "quality_profile": "showcase",
+    "viewBox": [1240, 720],
+    "repository": {
+      "url": "https://github.com/WilsonSayago/base-front",
+      "provider": "github",
+      "revision": "2ca4b4b2b08926fb46fadc2ce42fd4cf1944f0e3"
+    },
+    "views": [
+      {
+        "id": "admin-path",
+        "label": "Consola",
+        "focus": ["browser", "next", "golang", "postgres"],
+        "note": "El navegador solo habla con Next. Go es la fuente de identidad y datos."
+      },
+      {
+        "id": "chat-path",
+        "label": "Asistente",
+        "focus": ["browser", "next", "mastra", "openai"],
+        "note": "El panel usa /api/ai/chat. Next firma el actor y reenvía SSE."
+      },
+      {
+        "id": "catalog-path",
+        "label": "Integraciones",
+        "focus": ["next", "golang", "mastra"],
+        "note": "El catálogo sonda OIDC en Go y /health/live en Mastra sin devolver secretos."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "external",
+      "label": "Navegador",
+      "sublabel": "cookies HttpOnly",
+      "pos": [40, 300],
+      "size": [140, 58]
+    },
+    {
+      "id": "next",
+      "type": "frontend",
+      "label": "Base Front",
+      "sublabel": "Next.js BFF",
+      "pos": [250, 300],
+      "size": [150, 58],
+      "sources": [
+        { "path": "src/app/api/backend/[...path]/route.ts", "line": 84, "end_line": 120, "label": "proxy" },
+        { "path": "src/app/api/ai/chat/route.ts", "line": 13, "end_line": 73, "label": "chat" }
+      ]
+    },
+    {
+      "id": "golang",
+      "type": "backend",
+      "label": "base-golang",
+      "sublabel": "JWT · policies",
+      "pos": [470, 180],
+      "size": [150, 58],
+      "tag": "sibling"
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "solo Go",
+      "pos": [690, 180],
+      "size": [140, 58]
+    },
+    {
+      "id": "mastra",
+      "type": "backend",
+      "label": "base-agent",
+      "sublabel": "Mastra /v1/chat",
+      "pos": [470, 420],
+      "size": [150, 58],
+      "tag": "sibling"
+    },
+    {
+      "id": "openai",
+      "type": "cloud",
+      "label": "OpenAI",
+      "sublabel": "modelo",
+      "pos": [690, 420],
+      "size": [140, 58]
+    },
+    {
+      "id": "catalog",
+      "type": "frontend",
+      "label": "Integraciones",
+      "sublabel": "SETTINGS.read",
+      "pos": [250, 140],
+      "size": [150, 58],
+      "sources": [
+        { "path": "src/app/api/integrations/route.ts", "line": 50, "end_line": 67, "label": "GET" }
+      ]
+    }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Proceso Next.js", "wraps": ["next", "catalog"] }
+  ],
+  "connections": [
+    { "id": "browser-next", "from": "browser", "to": "next", "label": "sesión", "variant": "emphasis" },
+    { "id": "next-go", "from": "next", "to": "golang", "label": "Bearer access", "variant": "security", "fromSide": "top", "toSide": "left" },
+    { "id": "go-db", "from": "golang", "to": "postgres", "label": "SQL" },
+    { "id": "next-mastra", "from": "next", "to": "mastra", "label": "servicio + HMAC", "variant": "emphasis", "fromSide": "bottom", "toSide": "left" },
+    { "id": "mastra-openai", "from": "mastra", "to": "openai", "label": "OPENAI_API_KEY", "labelDy": -24 },
+    { "id": "catalog-go", "from": "catalog", "to": "golang", "label": "probe OIDC", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Frontera BFF",
+      "items": [
+        "El navegador nunca recibe access tokens, claves de modelo ni MASTRA_SERVICE_TOKEN",
+        "AI_CHAT_ENDPOINT y ACTOR_CONTEXT_SECRET viven en el servidor"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Aislamiento",
+      "items": [
+        "Mastra no toca PostgreSQL",
+        "Si el agente cae, usuarios, roles y perfil siguen en Go"
+      ]
+    }
+  ]
+}
