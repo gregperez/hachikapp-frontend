@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isOwnSessionsPath, sessionRefreshHeader, shouldClearCookiesAfterRevoke } from "@/lib/session-proxy";
+import { forwardedContentType, isOwnSessionsPath, sessionRefreshHeader, shouldClearCookiesAfterRevoke } from "@/lib/session-proxy";
 
 const backendUrl = (process.env.BACKEND_URL || "http://localhost:8080").replace(/\/$/, "");
 const ACCESS_COOKIE = "base_access";
@@ -54,10 +54,13 @@ async function backendFetch(
 async function makeResponse(source: Response) {
   const contentType = source.headers.get("content-type") || "application/json";
   const responseBody = source.status === 204 ? null : await source.arrayBuffer();
-  return new NextResponse(responseBody, {
-    status: source.status,
-    headers: { "Content-Type": contentType },
-  });
+  const headers: Record<string, string> = { "Content-Type": contentType };
+  // Binary payloads (pet photos) keep the upstream caching and sniffing rules.
+  if (contentType.startsWith("image/")) {
+    headers["Cache-Control"] = source.headers.get("cache-control") || "private, no-store";
+    headers["X-Content-Type-Options"] = "nosniff";
+  }
+  return new NextResponse(responseBody, { status: source.status, headers });
 }
 
 async function handler(
@@ -95,6 +98,7 @@ async function proxyRequest(
   const body = method === "GET" || method === "HEAD" ? undefined : await request.arrayBuffer();
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
   const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
+  const bodyHeaders = forwardedContentType(request.headers.get("content-type"));
   let sessionHeaders = isOwnSessionsPath(apiPath) ? sessionRefreshHeader(refreshToken) : undefined;
 
   if (apiPath === "v1/auth/logout") {
@@ -105,7 +109,7 @@ async function proxyRequest(
     return response;
   }
 
-  let upstream = await backendFetch(url, method, body, accessToken, sessionHeaders);
+  let upstream = await backendFetch(url, method, body, accessToken, { ...sessionHeaders, ...bodyHeaders });
   let rotatedTokens: TokenEnvelope | undefined;
 
   const isSessionStart = apiPath === "v1/auth/login" || apiPath === "v1/auth/oidc/google/exchange";
@@ -131,7 +135,7 @@ async function proxyRequest(
       if (isOwnSessionsPath(apiPath)) {
         sessionHeaders = sessionRefreshHeader(rotatedTokens.data?.refreshToken || refreshToken);
       }
-      upstream = await backendFetch(url, method, body, rotatedTokens.data?.accessToken, sessionHeaders);
+      upstream = await backendFetch(url, method, body, rotatedTokens.data?.accessToken, { ...sessionHeaders, ...bodyHeaders });
     }
   }
 

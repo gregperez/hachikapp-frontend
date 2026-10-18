@@ -38,6 +38,11 @@ describe("canSeeNavItem", () => {
     expect(canSeeNavItem(makeUser(), itemById("dashboard"))).toBe(true);
   });
 
+  it("shows the pets section to every signed-in user", () => {
+    expect(canSeeNavItem(makeUser(), itemById("pets"))).toBe(true);
+    expect(isLinkActive("/dashboard/pets/123/edit", "/dashboard/pets")).toBe(true);
+  });
+
   it("hides roles without ROLES.read", () => {
     expect(canSeeNavItem(usersReader(), itemById("roles"))).toBe(false);
     expect(canSeeNavItem(

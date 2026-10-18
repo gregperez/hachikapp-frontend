@@ -121,3 +121,72 @@ export type ApiProblem = {
   requestId?: string;
   errors?: Array<{ field: string; code: string }>;
 };
+
+export type PetSpecies = "dog" | "cat" | "other";
+export type PetSex = "male" | "female" | "unknown";
+export type PetSize = "" | "small" | "medium" | "large" | "giant";
+export type PetVisibility = "hidden" | "lost_only" | "always";
+export type PetPublicField =
+  | "photo"
+  | "species"
+  | "breed"
+  | "color"
+  | "sex"
+  | "age"
+  | "size"
+  | "distinctiveFeatures"
+  | "allergies"
+  | "specialConditions"
+  | "surgeries"
+  | "temperament"
+  | "ownerName"
+  | "contactButton"
+  | "comuna"
+  | "secondOwner";
+
+export type PetHealth = {
+  allergies: string[];
+  surgeries: string[];
+  specialConditions: string[];
+  temperament: string;
+};
+
+export type PetOwner = {
+  fullName: string;
+  address: string;
+  comuna: string;
+  phone: string;
+  phoneAlt: string;
+};
+
+export type PetSecondOwner = {
+  fullName: string;
+  phone: string;
+};
+
+export type Pet = {
+  id: string;
+  name: string;
+  species: PetSpecies;
+  breed: string;
+  color: string;
+  sex: PetSex;
+  birthDate: string;
+  chipNumber: string;
+  weightKg: number | null;
+  size: PetSize;
+  distinctiveFeatures: string;
+  health: PetHealth;
+  owner: PetOwner;
+  secondOwner: PetSecondOwner;
+  publicVisibility: Record<PetPublicField, PetVisibility>;
+  photoUrl?: string;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PetRequest = Omit<Pet, "id" | "photoUrl" | "createdAt" | "updatedAt" | "secondOwner" | "version"> & {
+  version?: number;
+  secondOwner?: PetSecondOwner;
+};
