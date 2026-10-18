@@ -189,6 +189,18 @@ describe("preparePetPhoto", () => {
     await expect(preparePetPhoto(file)).rejects.toThrow("No pudimos leer esa imagen. Prueba con una foto JPEG o PNG.");
   });
 
+  it("retries without options on browsers that reject imageOrientation", async () => {
+    const spy = vi.fn(async (_file: unknown, options?: unknown) => {
+      if (options) throw new TypeError("The provided value 'from-image' is not a valid enum value");
+      return { width: 10, height: 10, close: () => undefined };
+    });
+    globalThis.createImageBitmap = spy as unknown as typeof createImageBitmap;
+    const file = new File([new Uint8Array([1])], "foto.jpg", { type: "image/jpeg" });
+    const error = await preparePetPhoto(file).catch((caught: Error) => caught);
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect((error as Error).message).not.toBe("No pudimos leer esa imagen. Prueba con una foto JPEG o PNG.");
+  });
+
   it("asks the browser to apply the photo's own orientation", async () => {
     const spy = vi.fn(async () => {
       throw new Error("stop after the call");

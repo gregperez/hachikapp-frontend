@@ -12,6 +12,7 @@ const nav = vi.hoisted(() => {
     replaced: [] as string[],
     router: { push: () => {}, replace: (href: string) => { state.replaced.push(href); }, refresh: () => {}, back: () => {} },
   };
+  // Also exposed globally so the suite can run where vi.mock is unavailable; harmless under vitest.
   (globalThis as { __nav?: unknown }).__nav = state;
   return state;
 });

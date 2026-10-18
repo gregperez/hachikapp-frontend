@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PetForm } from "@/components/pet-form";
@@ -117,6 +117,50 @@ describe("PetForm wizard", () => {
     });
     await user.click(screen.getByRole("button", { name: /Guardar cambios/ }));
     expect(await screen.findAllByText("Elige una opción válida.")).toHaveLength(2);
+  });
+
+  it("keeps the full chip number when it is pasted in groups", async () => {
+    const { user } = renderForm();
+    const chip = screen.getByLabelText(/Número de microchip/);
+    await user.click(chip);
+    await user.paste("900 123 456 789 012");
+    expect(chip).toHaveValue("900123456789012");
+  });
+
+  it("moves to the next step when Enter is pressed in a field", async () => {
+    const { onSubmit, user } = renderForm();
+    await fillStepOne(user);
+    await user.type(screen.getByLabelText(/^Nombre \*/), "{Enter}");
+    expect(screen.getByText("Paso 2 de 4")).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("moves keyboard focus to the new step heading", async () => {
+    const { user } = renderForm();
+    await fillStepOne(user);
+    await user.click(screen.getByRole("button", { name: /Siguiente/ }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Salud" }));
+  });
+
+  it("ignores the second click of a double click that lands on Crear ficha", async () => {
+    const { onSubmit, user } = renderForm({ initial: completeForm });
+    for (let i = 0; i < 3; i++) await user.click(screen.getByRole("button", { name: /Siguiente/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Crear ficha/ }), { detail: 2 });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("clears a visibility error when that row changes", async () => {
+    const { user } = renderForm({
+      mode: "edit",
+      initial: { ...completeForm, version: 2 },
+      onSubmit: async () => ({ fieldErrors: { "publicVisibility.breed": "Elige una opción válida." } }),
+    });
+    await user.click(screen.getByRole("button", { name: /Guardar cambios/ }));
+    expect(await screen.findByText("Elige una opción válida.")).toBeInTheDocument();
+    const breedRow = screen.getByRole("radiogroup", { name: "Raza" });
+    await user.click(breedRow.querySelector("input[value='always']") as HTMLInputElement);
+    expect(screen.queryByText("Elige una opción válida.")).not.toBeInTheDocument();
   });
 
   it("accepts only digits in the chip number", async () => {

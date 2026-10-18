@@ -4,6 +4,7 @@ import { SessionProvider } from "@/components/session-provider";
 
 const nav = vi.hoisted(() => {
   const state = { pathname: "/dashboard/pets/new", params: {}, search: new URLSearchParams(), router: { push: () => {}, replace: () => {}, refresh: () => {}, back: () => {} } };
+  // Also exposed globally so the suite can run where vi.mock is unavailable; harmless under vitest.
   (globalThis as { __nav?: unknown }).__nav = state;
   return state;
 });

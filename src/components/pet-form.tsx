@@ -21,7 +21,7 @@ import {
 import type { PetPublicField, PetVisibility } from "@/lib/types";
 import { ArrowLeft, ArrowRight, Check, Eye, HeartPulse, IdCard, Plus, Save, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, KeyboardEvent, MouseEvent, useState } from "react";
+import { FormEvent, KeyboardEvent, MouseEvent, useEffect, useRef, useState } from "react";
 
 type Props = {
   initial: PetFormValues;
@@ -39,6 +39,7 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState(0);
   const [visited, setVisited] = useState(1);
+  const stepChangedByUser = useRef(false);
   const today = localDateISO();
   const wizard = mode === "create";
   const isLast = step === PET_FORM_STEPS.length - 1;
@@ -47,28 +48,48 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
   function set<K extends keyof PetFormValues>(key: K, value: PetFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
     const errorField = FORM_ERROR_FIELDS[key];
-    if (errorField) {
-      setErrors((current) => {
-        if (!current[errorField]) return current;
-        const rest = { ...current };
-        delete rest[errorField];
-        return rest;
-      });
-    }
+    if (errorField) clearError(errorField);
   }
 
   function setVisibility(field: PetPublicField, visibility: PetVisibility) {
     setValues((current) => ({ ...current, publicVisibility: { ...current.publicVisibility, [field]: visibility } }));
+    clearError(`publicVisibility.${field}`);
+  }
+
+  function clearError(field: string) {
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const rest = { ...current };
+      delete rest[field];
+      return rest;
+    });
+  }
+
+  // Enter in a text field moves to the next step while creating; on the last
+  // step (and in edit mode) the browser's implicit submit saves the form.
+  function onFormKeyDown(event: KeyboardEvent<HTMLFormElement>) {
+    const target = event.target as HTMLElement;
+    if (event.key !== "Enter" || event.defaultPrevented || event.repeat || !wizard || isLast) return;
+    if (target.tagName !== "INPUT" || ["radio", "checkbox"].includes((target as HTMLInputElement).type)) return;
+    event.preventDefault();
+    next();
   }
 
   function goTo(next: number) {
     setStep(next);
     setVisited((current) => Math.max(current, next + 1));
     setMessage("");
-    window.requestAnimationFrame(() => {
-      document.getElementById("pet-form-top")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    stepChangedByUser.current = true;
   }
+
+  // After the user changes step, move keyboard focus to the new step's heading;
+  // focusing it also scrolls it into view. Error focus (focusFirstError) runs
+  // later in an animation frame and takes precedence.
+  useEffect(() => {
+    if (!stepChangedByUser.current) return;
+    stepChangedByUser.current = false;
+    document.getElementById(stepHeadingId(step))?.focus();
+  }, [step]);
 
   function showErrors(found: Record<string, string>, text: string) {
     setErrors(found);
@@ -130,7 +151,7 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
   });
 
   return (
-    <form className="pet-form" onSubmit={submit} noValidate>
+    <form className="pet-form" onSubmit={submit} onKeyDown={onFormKeyDown} noValidate>
       <nav id="pet-form-top" className="pet-steps" aria-label="Secciones de la ficha">
         <p className="pet-steps-progress" aria-live="polite">Paso {step + 1} de {PET_FORM_STEPS.length}</p>
         <ol>
@@ -156,7 +177,7 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
         <section className="panel form-panel">
           <div className="panel-heading icon-heading">
             <span className="metric-icon indigo"><IdCard size={20} /></span>
-            <div><h2>Identificación</h2><p>Los datos que aparecen en su carnet.</p></div>
+            <div><h2 id={stepHeadingId(0)} tabIndex={-1}>Identificación</h2><p>Los datos que aparecen en su carnet.</p></div>
           </div>
           <div className="modal-form">
             <div className="form-grid two-columns">
@@ -202,7 +223,7 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
               </label>
             </div>
             <label>Número de microchip
-              <input {...fieldProps("chipNumber")} inputMode="numeric" value={values.chipNumber} maxLength={15} onChange={(event) => set("chipNumber", sanitizeChipInput(event.target.value))} placeholder="15 dígitos, ej: 900123456789012" />
+              <input {...fieldProps("chipNumber")} inputMode="numeric" value={values.chipNumber} onChange={(event) => set("chipNumber", sanitizeChipInput(event.target.value))} placeholder="15 dígitos, ej: 900123456789012" />
               <span className="form-hint inline">En Chile el microchip es obligatorio (Ley 21.020). Hachikapp lo complementa, no lo reemplaza.</span>
               <FieldError name="chipNumber" errors={errors} />
             </label>
@@ -218,7 +239,7 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
         <section className="panel form-panel">
           <div className="panel-heading icon-heading">
             <span className="metric-icon amber"><HeartPulse size={20} /></span>
-            <div><h2>Salud</h2><p>Lo importante para cuidarla bien, también si alguien la encuentra.</p></div>
+            <div><h2 id={stepHeadingId(1)} tabIndex={-1}>Salud</h2><p>Lo importante para cuidarla bien, también si alguien la encuentra.</p></div>
           </div>
           <div className="modal-form">
             <TagInput label="Alergias" name="health.allergies" placeholder="Ej: no puede comer atún" items={values.allergies} errors={errors} onChange={(items) => set("allergies", items)} />
@@ -237,7 +258,7 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
           <section className="panel form-panel">
             <div className="panel-heading icon-heading">
               <span className="metric-icon green"><UserRound size={20} /></span>
-              <div><h2>Dueño registrado en el chip</h2><p>Contacto principal de la mascota.</p></div>
+              <div><h2 id={stepHeadingId(2)} tabIndex={-1}>Dueño registrado en el chip</h2><p>Contacto principal de la mascota.</p></div>
             </div>
             <div className="modal-form">
               <label>Nombre completo *
@@ -290,7 +311,7 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
           <div className="panel-heading icon-heading">
             <span className="metric-icon indigo"><Eye size={20} /></span>
             <div>
-              <h2>Perfil público</h2>
+              <h2 id={stepHeadingId(3)} tabIndex={-1}>Perfil público</h2>
               <p>Quien encuentre a tu mascota puede contactarte. Tú decides qué ve.</p>
             </div>
           </div>
@@ -360,6 +381,10 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
  */
 function isRepeatClick(event: MouseEvent<HTMLButtonElement>) {
   return event.detail > 1;
+}
+
+function stepHeadingId(step: number) {
+  return `pet-step-heading-${step}`;
 }
 
 function fieldId(name: string) {

@@ -390,7 +390,12 @@ export async function preparePetPhoto(file: File): Promise<Blob> {
     // Apply the camera's EXIF rotation so phone photos stay upright.
     bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   } catch {
-    throw new Error("No pudimos leer esa imagen. Prueba con una foto JPEG o PNG.");
+    try {
+      // Browsers that reject the option already apply the EXIF rotation by default.
+      bitmap = await createImageBitmap(file);
+    } catch {
+      throw new Error("No pudimos leer esa imagen. Prueba con una foto JPEG o PNG.");
+    }
   }
   const scale = Math.min(1, MAX_PHOTO_SIDE / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");

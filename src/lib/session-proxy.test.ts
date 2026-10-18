@@ -23,7 +23,8 @@ describe("session proxy helpers", () => {
 
   it("forwards only image content types for binary uploads", () => {
     expect(forwardedContentType("image/jpeg")).toEqual({ "Content-Type": "image/jpeg" });
-    expect(forwardedContentType("image/webp")).toEqual({ "Content-Type": "image/webp" });
+    expect(forwardedContentType("image/png")).toEqual({ "Content-Type": "image/png" });
+    expect(forwardedContentType("image/webp")).toBeUndefined();
     expect(forwardedContentType("application/json")).toBeUndefined();
     expect(forwardedContentType("image/svg+xml")).toBeUndefined();
     expect(forwardedContentType(null)).toBeUndefined();

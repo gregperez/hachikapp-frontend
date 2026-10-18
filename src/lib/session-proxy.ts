@@ -18,5 +18,5 @@ export function shouldClearCookiesAfterRevoke(payload: { data?: { revokedCurrent
 export function forwardedContentType(contentType: string | null): Record<string, string> | undefined {
   const value = contentType?.trim();
   if (!value || value.toLowerCase().includes("json")) return undefined;
-  return /^image\/(jpeg|png|webp)$/i.test(value) ? { "Content-Type": value } : undefined;
+  return /^image\/(jpeg|png)$/i.test(value) ? { "Content-Type": value } : undefined;
 }
