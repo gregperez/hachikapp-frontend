@@ -176,9 +176,22 @@ export function petToForm(pet: Pet): PetForm {
 
 /** Parses "12,5" or "12.5"; returns NaN for anything that is not a number. */
 export function parseWeight(raw: string): number | null {
-  const value = raw.trim().replace(",", ".");
+  const value = raw.trim().replace(",", ".").replace(/\.$/, "");
   if (!value) return null;
   return /^\d+(\.\d+)?$/.test(value) ? Number(value) : Number.NaN;
+}
+
+/**
+ * Keeps only what a weight in kilos can contain while typing: up to 3 integer
+ * digits and 2 decimals, with a single comma or dot as separator ("12,5").
+ */
+export function sanitizeWeightInput(raw: string): string {
+  const cleaned = raw.replace(/[^\d.,]/g, "");
+  const separatorAt = cleaned.search(/[.,]/);
+  if (separatorAt === -1) return cleaned.slice(0, 3);
+  const integer = cleaned.slice(0, separatorAt).slice(0, 3) || "0";
+  const decimals = cleaned.slice(separatorAt + 1).replace(/[.,]/g, "").slice(0, 2);
+  return `${integer},${decimals}`;
 }
 
 export function formToRequest(form: PetForm): PetRequest {

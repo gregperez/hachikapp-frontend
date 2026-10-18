@@ -6,6 +6,7 @@ import {
   fieldErrorsFromProblem,
   formToRequest,
   parseWeight,
+  sanitizeWeightInput,
   petAge,
   petPhotoSrc,
   petToForm,
@@ -101,6 +102,7 @@ describe("helpers", () => {
   it("parses weights", () => {
     expect(parseWeight("")).toBeNull();
     expect(parseWeight("12,5")).toBe(12.5);
+    expect(parseWeight("12,")).toBe(12);
     expect(Number.isNaN(parseWeight("12kg") as number)).toBe(true);
   });
 
@@ -140,5 +142,25 @@ describe("form steps", () => {
     const errors = { name: "a", "owner.phone": "b", "health.allergies": "c" };
     expect(Object.keys(errorsForStep(errors, 2))).toEqual(["owner.phone"]);
     expect(Object.keys(withoutStep(errors, 0)).sort()).toEqual(["health.allergies", "owner.phone"]);
+  });
+});
+
+describe("sanitizeWeightInput", () => {
+  it("drops anything that is not a number", () => {
+    expect(sanitizeWeightInput("12kg")).toBe("12");
+    expect(sanitizeWeightInput("abc")).toBe("");
+    expect(sanitizeWeightInput("-5")).toBe("5");
+  });
+
+  it("keeps one decimal separator as a comma with up to two decimals", () => {
+    expect(sanitizeWeightInput("12.5")).toBe("12,5");
+    expect(sanitizeWeightInput("12,567")).toBe("12,56");
+    expect(sanitizeWeightInput("1,2,3")).toBe("1,23");
+    expect(sanitizeWeightInput(",5")).toBe("0,5");
+    expect(sanitizeWeightInput("12,")).toBe("12,");
+  });
+
+  it("limits the integer part to three digits", () => {
+    expect(sanitizeWeightInput("12345")).toBe("123");
   });
 });

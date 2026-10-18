@@ -9,6 +9,7 @@ import {
   PET_FORM_STEPS,
   VISIBILITY_OPTIONS,
   errorsForStep,
+  sanitizeWeightInput,
   stepOfField,
   validatePetForm,
   withoutStep,
@@ -169,7 +170,7 @@ export function PetForm({ initial, mode, submitLabel, cancelHref, onSubmit }: Pr
                 <FieldError name="birthDate" errors={errors} />
               </label>
               <label>Peso (kg)
-                <input {...fieldProps("weightKg")} inputMode="decimal" value={values.weightKg} onChange={(event) => set("weightKg", event.target.value)} placeholder="Ej: 12,5" />
+                <input {...fieldProps("weightKg")} inputMode="decimal" value={values.weightKg} maxLength={6} onChange={(event) => set("weightKg", sanitizeWeightInput(event.target.value))} placeholder="Ej: 12,5" />
                 <span className="form-hint inline">El peso inicial; se actualizará con los controles.</span>
                 <FieldError name="weightKg" errors={errors} />
               </label>
