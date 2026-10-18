@@ -50,7 +50,7 @@ export function errorMessage(error: unknown): string {
       "Another pet of this account already uses this chip number": "Ya registraste otra mascota con ese número de chip. Revisa los dígitos.",
       "The pet limit for this account was reached": "Llegaste al máximo de mascotas para esta cuenta.",
       "The pet was updated by someone else": "La ficha cambió mientras la editabas. Recárgala para ver la versión más reciente.",
-      "The photo must be a JPEG or PNG image up to 1 MiB and 4096 px per side": "La foto debe ser JPEG o PNG, pesar menos de 1 MB y medir hasta 4096 px por lado.",
+      "The photo must be a JPEG or PNG image up to 1 MiB and 2048 px per side": "La foto debe ser JPEG o PNG, pesar menos de 1 MB y medir hasta 2048 px por lado.",
       "Pet contains invalid fields": "Revisa los datos marcados en el formulario.",
       "The requested resource was not found": "No encontramos lo que buscabas.",
     };
