@@ -49,16 +49,16 @@ function LoginForm() {
         <div className="login-story-content">
           <BrandMark name={settings.displayName} logoUrl={settings.logoUrl} light />
           <div className="story-copy">
-            <p className="eyebrow light">CONTROL DE ACCESO, SIN RUIDO</p>
-            <h1>Tu equipo,<br />bajo control.</h1>
-            <p>Administra identidades, roles y permisos desde un espacio diseñado para tomar decisiones rápidas y seguras.</p>
+            <p className="eyebrow light">EL CARNET DE TU MASCOTA, SIEMPRE CONTIGO</p>
+            <h1>Cuidar es más<br />simple juntos.</h1>
+            <p>Toda la información de tu mascota, a mano cuando la necesitas. Ingresa para administrar Hachikapp.</p>
             <ul>
               <li><CheckCircle2 size={18} /> Sesiones JWT con renovación automática</li>
               <li><CheckCircle2 size={18} /> Permisos granulares por recurso</li>
               <li><CheckCircle2 size={18} /> Integración opcional con Google</li>
             </ul>
           </div>
-          <p className="story-footer">Protegido por Base Golang API</p>
+          <p className="story-footer">Inspirados en Hachikō: cuidar, acompañar y ayudar a volver a casa.</p>
         </div>
       </section>
 
@@ -78,7 +78,7 @@ function LoginForm() {
           <form onSubmit={handleSubmit} className="stack-form">
             <label>
               Correo electrónico
-              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="tu@empresa.com" autoComplete="email" required autoFocus />
+              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="tu@correo.com" autoComplete="email" required autoFocus />
             </label>
             <label>
               Contraseña

@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck } from "lucide-react";
+import { PawPrint } from "lucide-react";
 import { splitBrandName } from "@/lib/settings";
 
 export function BrandMark({
@@ -21,7 +21,7 @@ export function BrandMark({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt="" />
         ) : (
-          <ShieldCheck size={21} />
+          <PawPrint size={21} />
         )}
       </span>
       <span>{lead}{accent ? <span>{accent}</span> : null}</span>

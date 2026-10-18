@@ -6,7 +6,7 @@ import { useSession } from "@/components/session-provider";
 import { useSettings } from "@/components/settings-provider";
 import { ApiError, api, dataOf, errorMessage } from "@/lib/api";
 import { canAccess } from "@/lib/permissions";
-import { ALLOWED_LOCALES, emptyAppSettings, settingsEqual, validateSettingsDraft } from "@/lib/settings";
+import { ALLOWED_LOCALES, DEFAULT_PUBLIC_SETTINGS, emptyAppSettings, settingsEqual, validateSettingsDraft } from "@/lib/settings";
 import { ENTITY_IDS, type ApiEnvelope, type ApiProblem, type AppSettings } from "@/lib/types";
 import { Eye, Save, Settings2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
@@ -133,7 +133,7 @@ export default function GeneralSettingsPage() {
 
       {loading ? (
         <LoadingState />
-      ) : notice?.kind === "error" && current.version === 1 && current.displayName === "Base Console" && !dirty ? (
+      ) : notice?.kind === "error" && current.version === 1 && current.displayName === DEFAULT_PUBLIC_SETTINGS.displayName && !dirty ? (
         <div className="empty-state">
           <p>No pudimos cargar la configuración.</p>
           <button type="button" className="button secondary" onClick={() => void load()}>Reintentar</button>
@@ -194,7 +194,7 @@ export default function GeneralSettingsPage() {
               <div><h2>Vista previa</h2><p>Así se verá el branding con los valores actuales del formulario.</p></div>
             </div>
             <div className="settings-preview-card">
-              <BrandMark name={draft.displayName || "Base Console"} logoUrl={draft.logoUrl} light />
+              <BrandMark name={draft.displayName || DEFAULT_PUBLIC_SETTINGS.displayName} logoUrl={draft.logoUrl} light />
               <p>Locale {draft.defaultLocale}</p>
             </div>
           </section>

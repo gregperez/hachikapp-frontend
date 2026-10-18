@@ -143,7 +143,7 @@ export function AIChatPanel({ open, onClose }: { open: boolean; onClose: () => v
           <div className="chat-intro">
             <span><Sparkles size={20} /></span>
             <h2>¿En qué puedo ayudarte?</h2>
-            <p>Un punto de entrada para asistencia contextual dentro de Base Console.</p>
+            <p>Un punto de entrada para asistencia contextual dentro de Hachikapp.</p>
           </div>
           {messages.map((message) => (
             <div className={`chat-message ${message.role}`} key={message.id}>

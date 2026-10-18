@@ -1,7 +1,7 @@
 import type { AppSettings, PersonalPreferences, PublicSettings, ThemePreference } from "@/lib/types";
 
 export const DEFAULT_PUBLIC_SETTINGS: PublicSettings = {
-  displayName: "Base Console",
+  displayName: "Hachikapp",
   logoUrl: "",
   defaultLocale: "es",
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { api, errorMessage } from "@/lib/api";
-import { ShieldCheck } from "lucide-react";
+import { PawPrint } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
@@ -32,7 +32,7 @@ function CallbackContent() {
   return (
     <main className="callback-page">
       <div className="callback-card">
-        <span className="brand-mark brand-mark-large"><ShieldCheck size={28} /></span>
+        <span className="brand-mark brand-mark-large"><PawPrint size={28} /></span>
         {error ? (
           <>
             <h1>No pudimos iniciar sesión</h1>
