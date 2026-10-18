@@ -245,7 +245,7 @@ tbody tr:hover { background: var(--subtle); }
 .modal-header h2 { margin: 0 0 5px; font-size: 18px; letter-spacing: -.3px; }
 .modal-header p { margin: 0; color: var(--muted); font-size: 11px; }
 .modal-form { display: grid; gap: 16px; padding: 22px 24px 24px; }
-.modal-form > label, .form-grid label, .stack-form label { display: grid; gap: 7px; color: var(--ink); font-size: 11px; font-weight: 700; }
+.modal-form > label, .form-grid label, .stack-form label { display: grid; align-content: start; gap: 7px; color: var(--ink); font-size: 11px; font-weight: 700; }
 input { height: 43px; width: 100%; padding: 0 12px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 9px; outline: 0; font-size: 12px; transition: .16s ease; }
 input::placeholder { color: var(--muted-2); }
 input:focus { border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-ring); }
