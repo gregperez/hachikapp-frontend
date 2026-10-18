@@ -434,7 +434,26 @@ input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="
 .pet-form { display: grid; gap: 20px; }
 .pet-form > .notice { margin: 0; }
 .pet-form-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.pet-form-actions { position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: flex-end; gap: 10px; padding: 14px 0; background: linear-gradient(180deg, transparent, var(--canvas) 35%); }
+.pet-form-actions { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; gap: 10px; padding: 14px 0; background: linear-gradient(180deg, transparent, var(--canvas) 35%); }
+.pet-form-actions-spacer { flex: 1; }
+.pet-steps { scroll-margin-top: 88px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.pet-steps-progress { margin: 0 0 10px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.pet-steps ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.pet-step { position: relative; }
+.pet-step:not(:last-child)::after { position: absolute; top: 26px; left: calc(100% - 10px); width: 16px; height: 2px; content: ""; background: var(--line-strong); }
+.pet-step.done:not(:last-child)::after { background: var(--sage); }
+.pet-step button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 10px; color: var(--ink); text-align: left; background: transparent; border: 1px solid transparent; border-radius: 12px; cursor: pointer; font: inherit; transition: .16s ease; }
+.pet-step button:hover:not(:disabled) { background: var(--subtle); }
+.pet-step button:disabled { cursor: default; opacity: .6; }
+.pet-step-number { flex: 0 0 auto; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); background: var(--subtle); border: 1px solid var(--line-strong); border-radius: 50%; font-size: 12px; font-weight: 800; }
+.pet-step-copy { min-width: 0; display: flex; flex-direction: column; }
+.pet-step-copy strong { font-size: 13px; }
+.pet-step-copy small { overflow: hidden; color: var(--muted-2); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.pet-step.current button { background: var(--primary-soft); border-color: var(--green-line); }
+.pet-step.current .pet-step-number { color: var(--on-dark); background: var(--primary); border-color: var(--primary); }
+.pet-step.done .pet-step-number { color: var(--on-dark); background: var(--sage); border-color: var(--sage); }
+.pet-step.error .pet-step-number { color: var(--danger); background: var(--danger-soft); border-color: var(--danger-line); }
+.pet-step.error .pet-step-copy small::before { content: "Revisa esta sección · "; color: var(--danger); }
 .visibility-intro { margin: 18px 24px 0; padding: 12px 14px; color: var(--muted); background: var(--subtle); border-radius: 10px; font-size: 12px; line-height: 1.55; }
 .visibility-groups { display: grid; gap: 6px; padding: 8px 24px 22px; }
 .visibility-group { margin: 0; padding: 0; border: 0; }
@@ -550,4 +569,12 @@ html[data-theme="dark"] .button.secondary { color: var(--ink); background: var(-
   .segmented { width: 100%; }
   .segmented label { flex: 1; text-align: center; padding: 7px 4px; white-space: normal; }
   .pet-form-actions .button { flex: 1; }
+  .pet-form-actions-spacer { display: none; }
+  .pet-steps { padding: 12px; }
+  .pet-steps ol { gap: 4px; }
+  .pet-step:not(:last-child)::after { display: none; }
+  .pet-step button { flex-direction: column; gap: 5px; padding: 6px 2px; text-align: center; }
+  .pet-step-copy small { display: none; }
+  .pet-step-copy strong { font-size: 10px; line-height: 1.2; }
+  .pet-step:not(.current) .pet-step-copy strong { color: var(--muted); }
 }

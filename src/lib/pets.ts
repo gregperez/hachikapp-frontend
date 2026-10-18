@@ -215,6 +215,29 @@ export function formToRequest(form: PetForm): PetRequest {
   return request;
 }
 
+export const PET_FORM_STEPS = [
+  { id: "identity", title: "Identificación", hint: "Nombre, especie y chip" },
+  { id: "health", title: "Salud", hint: "Alergias y condiciones" },
+  { id: "owners", title: "Dueños", hint: "Cómo contactarte" },
+  { id: "visibility", title: "Perfil público", hint: "Qué ve quien la encuentre" },
+] as const;
+
+/** Index of the form step that holds an API or client field (e.g. "owner.phone" → 2). */
+export function stepOfField(field: string): number {
+  if (field.startsWith("health.")) return 1;
+  if (field.startsWith("owner.") || field.startsWith("secondOwner.")) return 2;
+  if (field.startsWith("publicVisibility.")) return 3;
+  return 0;
+}
+
+export function errorsForStep(errors: Record<string, string>, step: number): Record<string, string> {
+  return Object.fromEntries(Object.entries(errors).filter(([field]) => stepOfField(field) === step));
+}
+
+export function withoutStep(errors: Record<string, string>, step: number): Record<string, string> {
+  return Object.fromEntries(Object.entries(errors).filter(([field]) => stepOfField(field) !== step));
+}
+
 /** Client-side checks for the fields the browser cannot express; the API validates everything again. */
 export function validatePetForm(form: PetForm): Record<string, string> {
   const errors: Record<string, string> = {};

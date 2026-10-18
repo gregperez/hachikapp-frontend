@@ -14,10 +14,11 @@ export default function NewPetPage() {
 
   return (
     <>
-      <PageHeader eyebrow="MIS MASCOTAS" title="Nueva ficha" description="Empieza con lo básico; puedes completar el resto después." />
+      <PageHeader eyebrow="MIS MASCOTAS" title="Nueva ficha" description="Cuatro pasos cortos. Solo el nombre, la especie y tu contacto son obligatorios." />
       <PetForm
         key={user?.id || "anonymous"}
         initial={emptyPetForm(user?.name || "")}
+        mode="create"
         submitLabel="Crear ficha"
         cancelHref="/dashboard/pets"
         onSubmit={async (values) => {

@@ -29,6 +29,7 @@ export default function EditPetPage() {
         <PetForm
           key={`${pet.id}-${pet.version}`}
           initial={petToForm(pet)}
+          mode="edit"
           submitLabel="Guardar cambios"
           cancelHref={`/dashboard/pets/${pet.id}`}
           onSubmit={async (values) => {

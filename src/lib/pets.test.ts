@@ -9,6 +9,9 @@ import {
   petAge,
   petPhotoSrc,
   petToForm,
+  errorsForStep,
+  stepOfField,
+  withoutStep,
   validatePetForm,
 } from "@/lib/pets";
 import type { Pet } from "@/lib/types";
@@ -120,5 +123,22 @@ describe("helpers", () => {
   it("routes photos through the authenticated proxy", () => {
     expect(petPhotoSrc(pet.photoUrl)).toBe(`/api/backend${pet.photoUrl}`);
     expect(petPhotoSrc(undefined)).toBeUndefined();
+  });
+});
+
+describe("form steps", () => {
+  it("routes every field to its section", () => {
+    expect(stepOfField("name")).toBe(0);
+    expect(stepOfField("chipNumber")).toBe(0);
+    expect(stepOfField("health.allergies")).toBe(1);
+    expect(stepOfField("owner.phone")).toBe(2);
+    expect(stepOfField("secondOwner.fullName")).toBe(2);
+    expect(stepOfField("publicVisibility.breed")).toBe(3);
+  });
+
+  it("splits errors by step", () => {
+    const errors = { name: "a", "owner.phone": "b", "health.allergies": "c" };
+    expect(Object.keys(errorsForStep(errors, 2))).toEqual(["owner.phone"]);
+    expect(Object.keys(withoutStep(errors, 0)).sort()).toEqual(["health.allergies", "owner.phone"]);
   });
 });
