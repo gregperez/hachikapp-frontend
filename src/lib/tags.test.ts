@@ -3,6 +3,7 @@ import { ApiError } from "@/lib/api";
 import {
   formatAgeMonths,
   getVisitorId,
+  loadPublicTag,
   recordScan,
   revealContact,
   sendFinderMessage,
@@ -81,6 +82,21 @@ describe("getVisitorId", () => {
   });
 });
 
+describe("getVisitorId without crypto.randomUUID", () => {
+  it("builds a v4 UUID from getRandomValues", () => {
+    vi.stubGlobal("crypto", {
+      getRandomValues: (array: Uint8Array) => {
+        array.forEach((_, i) => (array[i] = (i * 37 + 11) % 256));
+        return array;
+      },
+    });
+    const id = getVisitorId(memoryStorage());
+    expect(id).toMatch(UUID);
+    expect(id[14]).toBe("4");
+    expect("89ab").toContain(id[19]);
+  });
+});
+
 describe("formatAgeMonths", () => {
   it.each([
     [0, "Menos de 1 mes"],
@@ -150,5 +166,48 @@ describe("public scan client", () => {
     const error = await revealContact("s1", "tok").catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ApiError);
     expect((error as ApiError).status).toBe(404);
+  });
+});
+
+describe("loadPublicTag", () => {
+  const view = { state: "active", profile: { name: "Luna", canContact: true, lost: false } };
+
+  it("returns the unwrapped view and requests no-store without cookies", async () => {
+    const fetchMock = stubFetch(200, { data: view });
+    const result = await loadPublicTag("K7M2Q9XR4P");
+    expect(result).toEqual({ kind: "ok", view });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/v1\/public\/tags\/K7M2Q9XR4P$/);
+    expect(init.cache).toBe("no-store");
+    expect(init.headers.Accept).toBe("application/json");
+    expect(init.headers["X-Forwarded-For"]).toBeUndefined();
+    expect(init.credentials).toBeUndefined();
+  });
+
+  it("forwards the client IP as X-Forwarded-For", async () => {
+    const fetchMock = stubFetch(200, { data: view });
+    await loadPublicTag("K7M2Q9XR4P", "203.0.113.9");
+    expect(fetchMock.mock.calls[0][1].headers["X-Forwarded-For"]).toBe("203.0.113.9");
+  });
+
+  it("encodes the code", async () => {
+    const fetchMock = stubFetch(404, null);
+    await loadPublicTag("a/b");
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/v1\/public\/tags\/a%2Fb$/);
+  });
+
+  it("maps 404 to not_found", async () => {
+    stubFetch(404, { title: "Not Found" });
+    expect(await loadPublicTag("K7M2Q9XR4P")).toEqual({ kind: "not_found" });
+  });
+
+  it.each([429, 500, 503])("maps %s to error", async (status) => {
+    stubFetch(status, {});
+    expect(await loadPublicTag("K7M2Q9XR4P")).toEqual({ kind: "error" });
+  });
+
+  it("maps a network failure to error", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("down")));
+    expect(await loadPublicTag("K7M2Q9XR4P")).toEqual({ kind: "error" });
   });
 });
