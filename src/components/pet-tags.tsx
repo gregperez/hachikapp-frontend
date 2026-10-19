@@ -2,9 +2,9 @@
 
 import { LoadingState, Notice } from "@/components/ui";
 import { api, dataOf, errorMessage } from "@/lib/api";
-import { formatChileDate, groupTagCode, tagKindLabel, tagStatusLabel } from "@/lib/tags";
+import { formatChileDate, groupTagCode, tagKindLabel, tagQrSvg, tagStatusLabel } from "@/lib/tags";
 import type { ApiEnvelope, PetTag } from "@/lib/types";
-import { Copy, Plus, Power } from "lucide-react";
+import { Copy, Download, Plus, Power } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 const MAX_ACTIVE = 5;
@@ -15,6 +15,7 @@ export function PetTags({ petId }: { petId: string }) {
   const [busy, setBusy] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
   const [manualUrl, setManualUrl] = useState<{ id: string; url: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -62,6 +63,21 @@ export function PetTags({ petId }: { petId: string }) {
     }
   }
 
+  async function downloadQr(tag: PetTag) {
+    setQrError(null);
+    try {
+      const svg = await tagQrSvg(tag.url);
+      const objectUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `placa-${tag.code}.svg`;
+      link.click();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      setQrError(tag.id);
+    }
+  }
+
   if (!tags) return <section className="panel"><LoadingState /></section>;
 
   const activeCount = tags.filter((tag) => tag.status === "active").length;
@@ -94,6 +110,7 @@ export function PetTags({ petId }: { petId: string }) {
                   {manualUrl?.id === tag.id && (
                     <input className="pet-tag-url" readOnly value={manualUrl.url} aria-label="Enlace de la placa" onFocus={(event) => event.currentTarget.select()} />
                   )}
+                  {qrError === tag.id && <p className="pet-section-hint" role="alert">No pudimos generar el QR, intenta de nuevo</p>}
                 </div>
                 {tag.status === "active" && (
                   <div className="pet-tag-actions">
@@ -106,6 +123,7 @@ export function PetTags({ petId }: { petId: string }) {
                     ) : (
                       <>
                         <button type="button" className="button secondary compact" onClick={() => copyLink(tag)}><Copy size={14} /> Copiar enlace</button>
+                        <button type="button" className="button secondary compact" onClick={() => downloadQr(tag)}><Download size={14} /> Descargar QR</button>
                         {copied === tag.id && <span className="pet-tag-copied" role="status">Enlace copiado</span>}
                         <button type="button" className="button ghost compact" onClick={() => setConfirmId(tag.id)} disabled={busy}><Power size={14} /> Desactivar</button>
                       </>

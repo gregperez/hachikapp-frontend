@@ -1,5 +1,6 @@
 import { api, dataOf } from "@/lib/api";
 import { formatMonths, petPhotoSrc } from "@/lib/pets";
+import QRCode from "qrcode";
 import type { ApiEnvelope, FinderMessageInput, PublicContact, PublicTagView, ScanReceipt } from "@/lib/types";
 
 const VISITOR_KEY = "hachikapp.visitorId";
@@ -69,6 +70,11 @@ export async function revealContact(scanId: string, token: string): Promise<Publ
 export function tagUrl(code: string): string {
   const base = (process.env.NEXT_PUBLIC_PUBLIC_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
   return `${base}/t/${code}`;
+}
+
+/** SVG markup of the QR that encodes a tag URL. */
+export function tagQrSvg(url: string): Promise<string> {
+  return QRCode.toString(url, { type: "svg", errorCorrectionLevel: "M", margin: 2 });
 }
 
 /** Same-origin proxy URL for a backend-relative photoUrl. */

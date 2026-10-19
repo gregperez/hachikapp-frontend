@@ -1,3 +1,4 @@
+import QRCode from "qrcode";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/api";
 import {
@@ -9,6 +10,7 @@ import {
   revealContact,
   sendFinderMessage,
   tagPhotoUrl,
+  tagQrSvg,
   tagUrl,
 } from "@/lib/tags";
 
@@ -225,5 +227,18 @@ describe("normalizeTagCode", () => {
     expect(normalizeTagCode("K7M2Q9XR400")).toBeNull();
     expect(normalizeTagCode("K7M2Q9XR4U")).toBeNull();
     expect(normalizeTagCode("")).toBeNull();
+  });
+});
+
+describe("tagQrSvg", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns an SVG for the url using the agreed options", async () => {
+    const spy = vi.spyOn(QRCode, "toString");
+    const svg = await tagQrSvg("https://hachikapp.cl/t/K7M2Q9XR41");
+    expect(svg).toContain("<svg");
+    expect(spy).toHaveBeenCalledWith("https://hachikapp.cl/t/K7M2Q9XR41", expect.objectContaining({ type: "svg", errorCorrectionLevel: "M", margin: 2 }));
   });
 });
