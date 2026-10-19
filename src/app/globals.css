@@ -613,3 +613,11 @@ html[data-theme="dark"] .button.danger { color: var(--canvas); }
 .public-data dt { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; }
 .public-data dd { margin: 0; color: var(--ink); font-size: 16px; overflow-wrap: anywhere; }
 .public-family { margin: 12px 0; color: var(--ink); font-size: 16px; font-weight: 700; }
+.activate-tag { display: grid; gap: 16px; }
+.activate-tag h1 { margin: 0; color: var(--primary-ink); font-size: 26px; }
+.activate-code { margin: 0; padding: 12px; text-align: center; background: var(--subtle); border-radius: 12px; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 24px; font-weight: 700; letter-spacing: 2px; }
+.activate-pets { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.activate-pets legend { margin-bottom: 8px; color: var(--ink); font-size: 14px; font-weight: 700; }
+.activate-pet { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 12px; cursor: pointer; }
+.activate-pet.selected { border-color: var(--primary-ink); background: var(--primary-soft); }
+.activate-pet small { color: var(--muted); }

@@ -4,6 +4,7 @@ import {
   formatAgeMonths,
   getVisitorId,
   loadPublicTag,
+  normalizeTagCode,
   recordScan,
   revealContact,
   sendFinderMessage,
@@ -209,5 +210,20 @@ describe("loadPublicTag", () => {
   it("maps a network failure to error", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("down")));
     expect(await loadPublicTag("K7M2Q9XR4P")).toEqual({ kind: "error" });
+  });
+});
+
+describe("normalizeTagCode", () => {
+  it("uppercases, strips separators and maps look-alike letters", () => {
+    expect(normalizeTagCode("k7m2-q9xr 4o")).toBe("K7M2Q9XR40");
+    expect(normalizeTagCode("k7m2q9xr4i")).toBe("K7M2Q9XR41");
+    expect(normalizeTagCode("k7m2q9xr4l")).toBe("K7M2Q9XR41");
+  });
+
+  it("rejects codes of the wrong length or outside the alphabet", () => {
+    expect(normalizeTagCode("K7M2Q9XR4")).toBeNull();
+    expect(normalizeTagCode("K7M2Q9XR400")).toBeNull();
+    expect(normalizeTagCode("K7M2Q9XR4U")).toBeNull();
+    expect(normalizeTagCode("")).toBeNull();
   });
 });

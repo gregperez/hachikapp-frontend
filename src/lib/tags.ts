@@ -98,3 +98,16 @@ export async function loadPublicTag(code: string, ip?: string): Promise<PublicTa
     return { kind: "error" };
   }
 }
+
+const CODE_ALPHABET = /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{10}$/;
+
+/** Mirrors the backend: uppercase, drop spaces/hyphens, O→0, I/L→1; null unless 10 Crockford characters. */
+export function normalizeTagCode(raw: string): string | null {
+  const code = raw.toUpperCase().replace(/[\s-]/g, "").replace(/O/g, "0").replace(/[IL]/g, "1");
+  return CODE_ALPHABET.test(code) ? code : null;
+}
+
+/** "K7M2Q9XR40" → "K7M2 Q9XR 40" for easier reading. */
+export function groupTagCode(code: string): string {
+  return code.replace(/(.{4})(?=.)/g, "$1 ");
+}
