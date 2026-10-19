@@ -1,6 +1,8 @@
 "use client";
 
 import { PetAvatar } from "@/components/pet-avatar";
+import { PetScans } from "@/components/pet-scans";
+import { PetTags } from "@/components/pet-tags";
 import { LoadingState, Modal, Notice, PageHeader } from "@/components/ui";
 import { api, dataOf, errorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/format";
@@ -50,10 +52,13 @@ function PetDetail() {
   useEffect(() => {
     const created = params.get("created");
     const saved = params.get("saved");
-    if (!created && !saved) return;
+    const activated = params.get("tag") === "activated";
+    if (!created && !saved && !activated) return;
     setNotice(created
       ? { message: "¡Listo! La ficha quedó creada. Agrega una foto para que la reconozcan fácilmente.", kind: "success" }
-      : { message: "Los cambios quedaron guardados.", kind: "success" });
+      : activated
+        ? { message: "¡Listo! La placa quedó vinculada.", kind: "success" }
+        : { message: "Los cambios quedaron guardados.", kind: "success" });
     // Drop the one-time flag so a reload does not show the notice again.
     router.replace(pathname);
   }, [params, pathname, router]);
@@ -211,6 +216,11 @@ function PetDetail() {
             ))}
           </div>
         </section>
+      </div>
+
+      <div className="pet-sections">
+        <PetTags petId={pet.id} />
+        <PetScans petId={pet.id} />
       </div>
 
       <Modal open={confirmDelete} title={`¿Eliminar la ficha de ${pet.name}?`} description="Se borrarán sus datos y su foto. Esta acción no se puede deshacer." onClose={() => setConfirmDelete(false)}>

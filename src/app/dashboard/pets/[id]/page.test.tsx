@@ -37,18 +37,37 @@ const pet = {
 
 const realFetch = globalThis.fetch;
 
+function respond(url: string) {
+  const list = url.includes("/tags") || url.includes("/scans")
+    ? (url.includes("/scans") ? { data: [], limit: 10, hasNext: false } : [])
+    : pet;
+  return new Response(JSON.stringify({ status: 200, message: "Ok", data: list }), { status: 200, headers: { "Content-Type": "application/json" } });
+}
+
 describe("PetDetailPage", () => {
   afterEach(() => {
     globalThis.fetch = realFetch;
   });
 
   it("shows the created notice once and removes the flag from the URL", async () => {
-    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ status: 200, message: "Ok", data: pet }), {
-      status: 200, headers: { "Content-Type": "application/json" },
-    })) as unknown as typeof fetch;
+    nav.search = new URLSearchParams("created=1");
+    nav.replaced.length = 0;
+    globalThis.fetch = vi.fn(async (url: string) => respond(String(url))) as unknown as typeof fetch;
 
     render(<PetDetailPage />);
     expect(await screen.findByText(/La ficha quedó creada/)).toBeInTheDocument();
+    await waitFor(() => expect(nav.replaced).toEqual([`/dashboard/pets/${PET_ID}`]));
+  });
+
+  it("shows the activated notice and renders tags and scans sections", async () => {
+    nav.search = new URLSearchParams("tag=activated");
+    nav.replaced.length = 0;
+    globalThis.fetch = vi.fn(async (url: string) => respond(String(url))) as unknown as typeof fetch;
+
+    render(<PetDetailPage />);
+    expect(await screen.findByText("¡Listo! La placa quedó vinculada.")).toBeInTheDocument();
+    expect(await screen.findByText("Últimos escaneos")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Placas" })).toBeInTheDocument();
     await waitFor(() => expect(nav.replaced).toEqual([`/dashboard/pets/${PET_ID}`]));
   });
 });

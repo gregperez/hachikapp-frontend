@@ -111,3 +111,41 @@ export function normalizeTagCode(raw: string): string | null {
 export function groupTagCode(code: string): string {
   return code.replace(/(.{4})(?=.)/g, "$1 ");
 }
+
+const CHILE_TZ = "America/Santiago";
+
+/** Date and time in Chilean time, whatever the viewer's device timezone is. */
+export function formatChileDateTime(value?: string): string {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: CHILE_TZ,
+  }).format(new Date(value));
+}
+
+export function formatChileDate(value?: string): string {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "short", year: "numeric", timeZone: CHILE_TZ }).format(new Date(value));
+}
+
+export function deviceLabel(family: string): string {
+  switch (family) {
+    case "ios": return "iPhone o iPad";
+    case "android": return "Android";
+    case "desktop": return "Computador";
+    default: return "Otro dispositivo";
+  }
+}
+
+export function tagKindLabel(kind: string): string {
+  return kind === "digital" ? "Placa digital" : "Placa física";
+}
+
+export function tagStatusLabel(status: string): string {
+  return status === "active" ? "Activa" : "Desactivada";
+}
+
+/** Keeps only digits and a leading + so the value is safe inside a tel: href. */
+export function telHref(phone: string): string {
+  const cleaned = phone.replace(/[^\d+]/g, "");
+  return `tel:${cleaned}`;
+}
