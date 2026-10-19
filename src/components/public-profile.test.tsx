@@ -239,6 +239,20 @@ describe("PublicProfileView message form", () => {
     expect(await screen.findByText("Algo falló, intenta de nuevo")).toBeInTheDocument();
   });
 
+  it("does not call the backend when the message is empty or blank", async () => {
+    const fetchMock = stubApi({ "/scans": () => ({ status: 500 }) });
+    render(<PublicProfileView code={CODE} result={ok()} />);
+    await waitFor(() => expect(callsTo(fetchMock, "/scans")).toHaveLength(1));
+    const user = await openForm();
+    await user.click(screen.getByRole("button", { name: "Enviar mensaje" }));
+    expect(await screen.findByText("Escribe un mensaje")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Tu mensaje"), "   ");
+    await user.click(screen.getByRole("button", { name: "Enviar mensaje" }));
+    expect(screen.getByText("Escribe un mensaje")).toBeInTheDocument();
+    expect(callsTo(fetchMock, "/scans")).toHaveLength(1);
+    expect(callsTo(fetchMock, "/messages")).toHaveLength(0);
+  });
+
   it("retries recording the scan on submit and fails gracefully when it still fails", async () => {
     const fetchMock = stubApi({ "/scans": () => ({ status: 500 }) });
     render(<PublicProfileView code={CODE} result={ok()} />);

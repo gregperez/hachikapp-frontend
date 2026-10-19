@@ -101,8 +101,12 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (sending) return;
-    setFieldErrors({});
     setFormError("");
+    if (!body.trim()) {
+      setFieldErrors({ body: FIELD_ERRORS["body:required"] });
+      return;
+    }
+    setFieldErrors({});
     setSending(true);
     try {
       const scan = await ensureScan();
