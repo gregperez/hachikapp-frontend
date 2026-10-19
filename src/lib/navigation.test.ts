@@ -29,7 +29,7 @@ describe("visibleNavSections", () => {
 
   it("shows every administrative link to an admin", () => {
     const admin = visibleNavSections(adminUser()).find((section) => section.id === "admin");
-    expect(admin?.items.map((item) => item.id)).toEqual(["users", "roles", "audit", "settings-general", "settings-integrations"]);
+    expect(admin?.items.map((item) => item.id)).toEqual(["users", "roles", "audit", "tags", "settings-general", "settings-integrations"]);
   });
 });
 
@@ -76,5 +76,15 @@ describe("isLinkActive", () => {
 
   it("marks nested administrative routes as active", () => {
     expect(isLinkActive("/dashboard/users", "/dashboard/users")).toBe(true);
+  });
+});
+
+describe("tags navigation", () => {
+  it("shows Placas only with TAGS read", () => {
+    const item = itemById("tags");
+    expect(item).toMatchObject({ kind: "link", href: "/dashboard/tags", label: "Placas" });
+    expect(canSeeNavItem(makeUser(), item)).toBe(false);
+    expect(canSeeNavItem(makeUser({ permissions: [permission(ENTITY_IDS.TAGS, { create: true })] }), item)).toBe(false);
+    expect(canSeeNavItem(makeUser({ permissions: [permission(ENTITY_IDS.TAGS, { read: true })] }), item)).toBe(true);
   });
 });

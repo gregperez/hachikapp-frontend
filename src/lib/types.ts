@@ -4,6 +4,7 @@ export const ENTITY_IDS = {
   USERS_PRIVILEGES: "USERS_PRIVILEGES",
   AUDIT_EVENTS: "AUDIT_EVENTS",
   SETTINGS: "SETTINGS",
+  TAGS: "TAGS",
 } as const;
 
 export type EntityId = (typeof ENTITY_IDS)[keyof typeof ENTITY_IDS];
@@ -189,4 +190,87 @@ export type Pet = {
 export type PetRequest = Omit<Pet, "id" | "photoUrl" | "createdAt" | "updatedAt" | "secondOwner" | "version"> & {
   version?: number;
   secondOwner?: PetSecondOwner;
+};
+
+export type TagKind = "physical" | "digital";
+export type TagStatus = "unassigned" | "active" | "disabled";
+
+export type PetTag = {
+  id: string;
+  code: string;
+  kind: TagKind;
+  status: TagStatus;
+  petId?: string;
+  activatedAt?: string;
+  disabledAt?: string;
+  createdAt: string;
+  url: string;
+};
+
+export type TagBatch = {
+  id: string;
+  label: string;
+  quantity: number;
+  createdBy?: string;
+  createdAt: string;
+};
+
+export type PublicProfile = {
+  name: string;
+  photoUrl?: string;
+  species?: string;
+  breed?: string;
+  color?: string;
+  sex?: string;
+  size?: string;
+  ageMonths?: number;
+  distinctiveFeatures?: string;
+  allergies?: string[];
+  specialConditions?: string[];
+  surgeries?: string[];
+  temperament?: string;
+  ownerFirstName?: string;
+  secondOwnerFirstName?: string;
+  comuna?: string;
+  canContact: boolean;
+  lost: boolean;
+};
+
+export type PublicTagView = {
+  state: "active" | "unassigned" | "disabled";
+  profile?: PublicProfile;
+};
+
+export type ScanReceipt = {
+  scanId: string;
+  scanToken: string;
+};
+
+export type PublicContact = {
+  phone: string;
+  whatsappUrl: string;
+};
+
+export type ScanMessage = {
+  id: string;
+  body: string;
+  finderName?: string;
+  finderPhone?: string;
+  createdAt: string;
+};
+
+export type ScanWithMessages = {
+  id: string;
+  tagCode: string;
+  scannedAt: string;
+  userAgentFamily: "ios" | "android" | "desktop" | "other";
+  phoneRevealedAt?: string;
+  messages: ScanMessage[];
+};
+
+export type FinderMessageInput = {
+  body: string;
+  finderName?: string;
+  finderPhone?: string;
+  website?: string;
 };

@@ -354,6 +354,11 @@ export function petAge(birthDate: string, now: Date = new Date()): string {
   let months = (now.getFullYear() - year) * 12 + (now.getMonth() + 1 - month);
   if (now.getDate() < day) months -= 1;
   if (months < 0) return "";
+  return formatMonths(months);
+}
+
+/** Human age from a count of months ("Menos de 1 mes", "1 mes", "8 meses", "5 años"). */
+export function formatMonths(months: number): string {
   if (months < 1) return "Menos de 1 mes";
   if (months < 12) return months === 1 ? "1 mes" : `${months} meses`;
   const years = Math.floor(months / 12);

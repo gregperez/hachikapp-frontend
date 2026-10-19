@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { forwardedContentType, isOwnSessionsPath, sessionRefreshHeader, shouldClearCookiesAfterRevoke } from "@/lib/session-proxy";
+import { clientIpFrom, forwardedContentType, scanTokenHeader, isOwnSessionsPath, sessionRefreshHeader, shouldClearCookiesAfterRevoke } from "@/lib/session-proxy";
 
 const backendUrl = (process.env.BACKEND_URL || "http://localhost:8080").replace(/\/$/, "");
 const ACCESS_COOKIE = "base_access";
@@ -99,17 +99,22 @@ async function proxyRequest(
   const accessToken = request.cookies.get(ACCESS_COOKIE)?.value;
   const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value;
   const bodyHeaders = forwardedContentType(request.headers.get("content-type"));
+  const clientIp = clientIpFrom(request.headers);
+  const networkHeaders: Record<string, string> = {
+    ...(clientIp ? { "X-Forwarded-For": clientIp } : {}),
+    ...scanTokenHeader(apiPath, request.headers.get("x-scan-token")),
+  };
   let sessionHeaders = isOwnSessionsPath(apiPath) ? sessionRefreshHeader(refreshToken) : undefined;
 
   if (apiPath === "v1/auth/logout") {
     const logoutBody = new TextEncoder().encode(JSON.stringify({ refreshToken })).buffer;
-    const upstream = await backendFetch(url, "POST", logoutBody, accessToken);
+    const upstream = await backendFetch(url, "POST", logoutBody, accessToken, networkHeaders);
     const response = await makeResponse(upstream);
     clearTokens(response);
     return response;
   }
 
-  let upstream = await backendFetch(url, method, body, accessToken, { ...sessionHeaders, ...bodyHeaders });
+  let upstream = await backendFetch(url, method, body, accessToken, { ...sessionHeaders, ...bodyHeaders, ...networkHeaders });
   let rotatedTokens: TokenEnvelope | undefined;
 
   const isSessionStart = apiPath === "v1/auth/login" || apiPath === "v1/auth/oidc/google/exchange";
@@ -129,13 +134,15 @@ async function proxyRequest(
       `${backendUrl}/v1/auth/refresh-token`,
       "POST",
       new TextEncoder().encode(JSON.stringify({ refreshToken })).buffer,
+      undefined,
+      networkHeaders,
     );
     if (refreshResponse.ok) {
       rotatedTokens = (await refreshResponse.json()) as TokenEnvelope;
       if (isOwnSessionsPath(apiPath)) {
         sessionHeaders = sessionRefreshHeader(rotatedTokens.data?.refreshToken || refreshToken);
       }
-      upstream = await backendFetch(url, method, body, rotatedTokens.data?.accessToken, { ...sessionHeaders, ...bodyHeaders });
+      upstream = await backendFetch(url, method, body, rotatedTokens.data?.accessToken, { ...sessionHeaders, ...bodyHeaders, ...networkHeaders });
     }
   }
 

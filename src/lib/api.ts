@@ -52,9 +52,13 @@ export function errorMessage(error: unknown): string {
       "The pet was updated by someone else": "La ficha cambió mientras la editabas. Recárgala para ver la versión más reciente.",
       "The photo must be a JPEG or PNG image up to 1 MiB and 2048 px per side": "La foto debe ser JPEG o PNG, pesar menos de 1 MB y medir hasta 2048 px por lado.",
       "Pet contains invalid fields": "Revisa los datos marcados en el formulario.",
+      "This tag is already linked": "Esta placa ya está vinculada",
+      "The pet already has 5 active tags": "Tu mascota ya tiene 5 placas activas",
+      "Tag not found": "No encontramos esta placa",
       "The requested resource was not found": "No encontramos lo que buscabas.",
     };
     if (translations[error.message]) return translations[error.message];
+    if (error.status === 429) return "Hiciste muchos intentos. Espera un momento e intenta de nuevo.";
   }
   return error instanceof Error ? error.message : "Ocurrió un error inesperado.";
 }

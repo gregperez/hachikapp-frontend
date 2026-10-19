@@ -7,6 +7,7 @@ import {
   PawPrint,
   Plug,
   Settings2,
+  Tag,
   ShieldCheck,
   Users,
   type LucideIcon,
@@ -90,6 +91,14 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Auditoría",
         icon: ClipboardList,
         requiredPermission: { entity: ENTITY_IDS.AUDIT_EVENTS, action: "read" },
+      },
+      {
+        id: "tags",
+        kind: "link",
+        href: "/dashboard/tags",
+        label: "Placas",
+        icon: Tag,
+        requiredPermission: { entity: ENTITY_IDS.TAGS, action: "read" },
       },
       {
         id: "settings-general",

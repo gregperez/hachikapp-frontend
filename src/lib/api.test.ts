@@ -42,3 +42,16 @@ describe("dataOf", () => {
     });
   });
 });
+
+describe("tag errors", () => {
+  it("translates the tag problems from the API", () => {
+    expect(errorMessage(new ApiError("This tag is already linked", 409))).toBe("Esta placa ya está vinculada");
+    expect(errorMessage(new ApiError("The pet already has 5 active tags", 409))).toBe("Tu mascota ya tiene 5 placas activas");
+    expect(errorMessage(new ApiError("Tag not found", 404))).toBe("No encontramos esta placa");
+  });
+
+  it("translates any 429 regardless of the detail text", () => {
+    expect(errorMessage(new ApiError("Too many authentication attempts", 429)))
+      .toBe("Hiciste muchos intentos. Espera un momento e intenta de nuevo.");
+  });
+});
