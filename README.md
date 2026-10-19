@@ -38,6 +38,7 @@ Variables disponibles:
 
 ```env
 BACKEND_URL=http://localhost:8080
+CLIENT_IP_HEADER=
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
 AI_CHAT_ENDPOINT=http://localhost:4111/v1/chat
 AI_CHAT_API_KEY=
@@ -45,6 +46,8 @@ ACTOR_CONTEXT_SECRET=
 ```
 
 `BACKEND_URL` solo se utiliza en el servidor de Next.js. `NEXT_PUBLIC_BACKEND_URL` se usa para iniciar la redirección del login de Google.
+
+`CLIENT_IP_HEADER` indica de qué cabecera sale la IP del visitante, que Next reenvía a la API en `X-Forwarded-For` para sus límites por visitante (ficha pública `/t/...` y login). Vacía o `x-forwarded-for`: se usa la **última** entrada de `x-forwarded-for` (la que agrega el proxy más cercano). Otro nombre (por ejemplo `x-real-ip` o `cf-connecting-ip`): se usa esa cabecera tal cual, sin recurrir a otra. **El frontend debe correr detrás de un proxy que fije o sobrescriba esa cabecera**; si no, cada cliente puede elegir su IP. Además, el backend debe incluir la dirección de este servidor en `AUTH_TRUSTED_PROXY_CIDRS`, o todos los visitantes compartirán la misma cuota.
 
 El chat funciona en modo de preparación cuando `AI_CHAT_ENDPOINT` está vacío. Para conectarlo, arranca `base-agent` y copia `MASTRA_SERVICE_TOKEN` en `AI_CHAT_API_KEY` y el mismo `ACTOR_CONTEXT_SECRET`. El BFF `POST /api/ai/chat` valida la sesión, firma el actor y reenvía SSE; el navegador nunca recibe la clave del modelo ni la credencial de servicio.
 

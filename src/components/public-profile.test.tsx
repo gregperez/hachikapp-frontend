@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { StrictMode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -43,6 +43,15 @@ function stubApi(routes: Record<string, () => Reply>) {
 
 const scanOk = () => ({ status: 201, body: { data: { scanId: "s1", scanToken: "tok" } } });
 
+/** First call issues s1/tok, later calls s2/tok2 (a repeat scan rotates the token). */
+function scanSequence() {
+  let calls = 0;
+  return () => {
+    calls += 1;
+    return calls === 1 ? scanOk() : { status: 201, body: { data: { scanId: "s2", scanToken: "tok2" } } };
+  };
+}
+
 function callsTo(fetchMock: ReturnType<typeof stubApi>, suffix: string) {
   return fetchMock.mock.calls.filter((call) => (call[0] as string).endsWith(suffix));
 }
@@ -75,6 +84,14 @@ describe("PublicProfileView active", () => {
     expect(init.method).toBe("POST");
   });
 
+  it("hides the photo when it fails to load", () => {
+    stubApi({ "/scans": scanOk });
+    render(<PublicProfileView code={CODE} result={ok()} />);
+    fireEvent.error(screen.getByAltText("Foto de Luna"));
+    expect(screen.queryByAltText("Foto de Luna")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Hola, soy Luna" })).toBeInTheDocument();
+  });
+
   it("hides the call button when the owner does not allow contact", () => {
     stubApi({ "/scans": scanOk });
     render(<PublicProfileView code={CODE} result={ok({ canContact: false })} />);
@@ -91,14 +108,11 @@ describe("PublicProfileView active", () => {
 });
 
 describe("PublicProfileView other states", () => {
-  it("unassigned offers activation through login", () => {
+  it("unassigned links straight to activation (middleware handles login)", () => {
     const fetchMock = stubApi({});
     render(<PublicProfileView code={CODE} result={{ kind: "ok", view: { state: "unassigned" } }} />);
     expect(screen.getByText("Esta placa aún no está activada")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Activar" })).toHaveAttribute(
-      "href",
-      `/login?from=${encodeURIComponent(`/t/${CODE}/activar`)}`,
-    );
+    expect(screen.getByRole("link", { name: "Activar" })).toHaveAttribute("href", `/t/${CODE}/activar`);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -149,20 +163,69 @@ describe("PublicProfileView contact", () => {
     expect((call[1].headers as Record<string, string>)["X-Scan-Token"]).toBe("tok");
 
     const tel = await screen.findByRole("link", { name: /Llamar/ });
-    expect(tel).toHaveAttribute("href", "tel:+56 9 1234 5678");
+    expect(tel).toHaveAttribute("href", "tel:+56912345678");
+    expect(tel).toHaveTextContent("Llamar +56 9 1234 5678");
     const wa = screen.getByRole("link", { name: /WhatsApp/ });
     expect(wa).toHaveAttribute("href", "https://wa.me/56912345678");
     expect(wa).toHaveAttribute("target", "_blank");
     expect(wa).toHaveAttribute("rel", "noopener noreferrer");
   });
 
-  it("404 tells the finder to leave a message and hides the call button", async () => {
-    stubApi({ "/scans": scanOk, "/contact": () => ({ status: 404, body: { title: "Not Found" } }) });
+  it("404 even with a fresh token tells the finder to leave a message and hides the call button", async () => {
+    const fetchMock = stubApi({ "/scans": scanSequence(), "/contact": () => ({ status: 404, body: { title: "Not Found" } }) });
     const user = userEvent.setup();
     render(<PublicProfileView code={CODE} result={ok()} />);
+    await waitFor(() => expect(callsTo(fetchMock, "/scans")).toHaveLength(1));
     await user.click(screen.getByRole("button", { name: "Llamar / WhatsApp" }));
     expect(await screen.findByText("Su familia prefiere que le dejes un mensaje")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Llamar / WhatsApp" })).not.toBeInTheDocument();
+    expect(callsTo(fetchMock, "/scans")).toHaveLength(2);
+    const contacts = callsTo(fetchMock, "/contact") as unknown as Array<[string, RequestInit]>;
+    expect(contacts).toHaveLength(2);
+    expect(contacts[1][0]).toBe("/api/backend/v1/public/scans/s2/contact");
+    expect((contacts[1][1].headers as Record<string, string>)["X-Scan-Token"]).toBe("tok2");
+  });
+
+  it("re-scans after a 404 from a rotated token and then reveals the contact", async () => {
+    let contactCalls = 0;
+    const fetchMock = stubApi({
+      "/scans": scanSequence(),
+      "/contact": () => {
+        contactCalls += 1;
+        return contactCalls === 1
+          ? { status: 404, body: { title: "Not Found" } }
+          : { status: 200, body: { data: { phone: "+56 9 1234 5678", whatsappUrl: "https://wa.me/56912345678" } } };
+      },
+    });
+    const user = userEvent.setup();
+    render(<PublicProfileView code={CODE} result={ok()} />);
+    await waitFor(() => expect(callsTo(fetchMock, "/scans")).toHaveLength(1));
+    await user.click(screen.getByRole("button", { name: "Llamar / WhatsApp" }));
+    expect(await screen.findByRole("link", { name: /Llamar/ })).toHaveAttribute("href", "tel:+56912345678");
+    expect(screen.queryByText("Su familia prefiere que le dejes un mensaje")).not.toBeInTheDocument();
+    expect(callsTo(fetchMock, "/scans")).toHaveLength(2);
+    const contacts = callsTo(fetchMock, "/contact") as unknown as Array<[string, RequestInit]>;
+    expect(contacts).toHaveLength(2);
+    expect((contacts[1][1].headers as Record<string, string>)["X-Scan-Token"]).toBe("tok2");
+  });
+
+  it("shares one in-flight scan between the page load and a tap on call", async () => {
+    let release: (value: { status: number; body?: unknown }) => void = () => {};
+    const pendingScan = new Promise<{ status: number; body?: unknown }>((resolve) => {
+      release = resolve;
+    });
+    const fetchMock = stubApi({
+      "/scans": () => pendingScan,
+      "/contact": () => ({ status: 200, body: { data: { phone: "+56 9 1234 5678", whatsappUrl: "https://wa.me/56912345678" } } }),
+    });
+    const user = userEvent.setup();
+    render(<PublicProfileView code={CODE} result={ok()} />);
+    await waitFor(() => expect(callsTo(fetchMock, "/scans")).toHaveLength(1));
+    await user.click(screen.getByRole("button", { name: "Llamar / WhatsApp" }));
+    await act(async () => release(scanOk()));
+    expect(await screen.findByRole("link", { name: /Llamar/ })).toBeInTheDocument();
+    expect(callsTo(fetchMock, "/scans")).toHaveLength(1);
+    expect(callsTo(fetchMock, "/contact")).toHaveLength(1);
   });
 });
 
@@ -251,6 +314,41 @@ describe("PublicProfileView message form", () => {
     expect(screen.getByText("Escribe un mensaje")).toBeInTheDocument();
     expect(callsTo(fetchMock, "/scans")).toHaveLength(1);
     expect(callsTo(fetchMock, "/messages")).toHaveLength(0);
+  });
+
+  it("re-scans after a 404 from a rotated token and resends the message once", async () => {
+    let messageCalls = 0;
+    const fetchMock = stubApi({
+      "/scans": scanSequence(),
+      "/messages": () => {
+        messageCalls += 1;
+        return messageCalls === 1 ? { status: 404, body: { title: "Not Found" } } : { status: 202 };
+      },
+    });
+    render(<PublicProfileView code={CODE} result={ok()} />);
+    await waitFor(() => expect(callsTo(fetchMock, "/scans")).toHaveLength(1));
+    const user = await openForm();
+    await user.type(screen.getByLabelText("Tu mensaje"), "Hola");
+    await user.click(screen.getByRole("button", { name: "Enviar mensaje" }));
+    expect(await screen.findByText("¡Gracias! Su familia recibirá tu mensaje")).toBeInTheDocument();
+    expect(callsTo(fetchMock, "/scans")).toHaveLength(2);
+    const messages = callsTo(fetchMock, "/messages") as unknown as Array<[string, RequestInit]>;
+    expect(messages).toHaveLength(2);
+    expect(messages[1][0]).toBe("/api/backend/v1/public/scans/s2/messages");
+    expect((messages[1][1].headers as Record<string, string>)["X-Scan-Token"]).toBe("tok2");
+    expect(JSON.parse(messages[1][1].body as string)).toEqual({ body: "Hola", website: "" });
+  });
+
+  it("shows a generic error when the message still gets 404 with a fresh token", async () => {
+    const fetchMock = stubApi({ "/scans": scanSequence(), "/messages": () => ({ status: 404, body: { title: "Not Found" } }) });
+    render(<PublicProfileView code={CODE} result={ok()} />);
+    await waitFor(() => expect(callsTo(fetchMock, "/scans")).toHaveLength(1));
+    const user = await openForm();
+    await user.type(screen.getByLabelText("Tu mensaje"), "Hola");
+    await user.click(screen.getByRole("button", { name: "Enviar mensaje" }));
+    expect(await screen.findByText("Algo falló, intenta de nuevo")).toBeInTheDocument();
+    expect(callsTo(fetchMock, "/scans")).toHaveLength(2);
+    expect(callsTo(fetchMock, "/messages")).toHaveLength(2);
   });
 
   it("retries recording the scan on submit and fails gracefully when it still fails", async () => {

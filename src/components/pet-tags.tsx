@@ -99,7 +99,7 @@ export function PetTags({ petId }: { petId: string }) {
                   <div className="pet-tag-actions">
                     {confirmId === tag.id ? (
                       <div className="pet-tag-confirm" role="group">
-                        <span>¿Desactivar esta placa? Quien la escanee ya no verá la ficha.</span>
+                        <span>¿Desactivar esta placa? Quien la escanee ya no verá la ficha. No podrás volver a activarla.</span>
                         <button type="button" className="button danger compact" onClick={() => disable(tag)} disabled={busy}>Sí, desactivar</button>
                         <button type="button" className="button secondary compact" onClick={() => setConfirmId(null)}>Cancelar</button>
                       </div>

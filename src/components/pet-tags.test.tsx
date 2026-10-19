@@ -80,7 +80,7 @@ describe("PetTags", () => {
     stub();
     render(<PetTags petId={PET} />);
     await userEvent.click(await screen.findByRole("button", { name: "Desactivar" }));
-    expect(screen.getByText("¿Desactivar esta placa? Quien la escanee ya no verá la ficha.")).toBeInTheDocument();
+    expect(screen.getByText("¿Desactivar esta placa? Quien la escanee ya no verá la ficha. No podrás volver a activarla.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
     expect(screen.queryByText(/¿Desactivar esta placa\?/)).not.toBeInTheDocument();
     expect(calls.filter((c) => c.method === "POST")).toHaveLength(0);

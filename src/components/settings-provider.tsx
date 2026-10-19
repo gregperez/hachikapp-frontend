@@ -23,6 +23,24 @@ type SettingsContextValue = {
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
+// Storage can throw (blocked site data, some private modes); preferences then
+// fall back to the defaults and are kept only in memory.
+function readStoredPreferences(): PersonalPreferences {
+  try {
+    return parsePreferences(window.localStorage.getItem(PREFERENCES_STORAGE_KEY));
+  } catch {
+    return { ...DEFAULT_PREFERENCES };
+  }
+}
+
+function writeStoredPreferences(next: PersonalPreferences) {
+  try {
+    window.localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // Keep the in-memory preferences.
+  }
+}
+
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<PublicSettings>(DEFAULT_PUBLIC_SETTINGS);
   const [source, setSource] = useState<"remote" | "fallback">("fallback");
@@ -31,7 +49,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [prefersDark, setPrefersDark] = useState(false);
 
   useEffect(() => {
-    setPreferences(parsePreferences(window.localStorage.getItem(PREFERENCES_STORAGE_KEY)));
+    setPreferences(readStoredPreferences());
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const sync = () => setPrefersDark(media.matches);
     sync();
@@ -58,7 +76,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const savePreferences = useCallback((next: PersonalPreferences) => {
     setPreferences(next);
-    window.localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(next));
+    writeStoredPreferences(next);
   }, []);
 
   useEffect(() => {

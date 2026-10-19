@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clientIpFrom, forwardedContentType, scanTokenHeader, isOwnSessionsPath, sessionRefreshHeader, shouldClearCookiesAfterRevoke } from "@/lib/session-proxy";
+import { clientIpFrom, forwardedContentType, proxyResponseHeaders, scanTokenHeader, isOwnSessionsPath, sessionRefreshHeader, shouldClearCookiesAfterRevoke } from "@/lib/session-proxy";
 
 const backendUrl = (process.env.BACKEND_URL || "http://localhost:8080").replace(/\/$/, "");
 const ACCESS_COOKIE = "base_access";
@@ -54,12 +54,7 @@ async function backendFetch(
 async function makeResponse(source: Response) {
   const contentType = source.headers.get("content-type") || "application/json";
   const responseBody = source.status === 204 ? null : await source.arrayBuffer();
-  const headers: Record<string, string> = { "Content-Type": contentType };
-  // Binary payloads (pet photos) keep the upstream caching and sniffing rules.
-  if (contentType.startsWith("image/")) {
-    headers["Cache-Control"] = source.headers.get("cache-control") || "private, no-store";
-    headers["X-Content-Type-Options"] = "nosniff";
-  }
+  const headers = proxyResponseHeaders(contentType, source.headers.get("cache-control"));
   return new NextResponse(responseBody, { status: source.status, headers });
 }
 

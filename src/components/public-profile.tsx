@@ -9,6 +9,7 @@ import {
   revealContact,
   sendFinderMessage,
   tagPhotoUrl,
+  telHref,
   type PublicTagResult,
 } from "@/lib/tags";
 import type { PublicContact, PublicProfile, ScanReceipt } from "@/lib/types";
@@ -52,7 +53,7 @@ export function PublicProfileView({ code, result }: { code: string; result: Publ
     return (
       <section className="public-card public-notice">
         <p>Esta placa aún no está activada</p>
-        <a className="button primary button-large public-action" href={`/login?from=${encodeURIComponent(`/t/${code}/activar`)}`}>
+        <a className="button primary button-large public-action" href={`/t/${code}/activar`}>
           Activar
         </a>
       </section>
@@ -66,17 +67,52 @@ type ContactState = "idle" | "loading" | "revealed" | "declined";
 
 function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile }) {
   const scanRef = useRef<ScanReceipt | null>(null);
+  const pendingScanRef = useRef<Promise<ScanReceipt | null> | null>(null);
   const startedRef = useRef(false);
 
-  const ensureScan = useCallback(async (): Promise<ScanReceipt | null> => {
-    if (scanRef.current) return scanRef.current;
-    try {
-      scanRef.current = await recordScan(code, getVisitorId());
-    } catch {
-      // Recording is best-effort; the profile keeps working.
+  // Concurrent callers share one POST /scans: a second scan within minutes
+  // reuses the scan row and rotates its token, invalidating the first one.
+  const ensureScan = useCallback((): Promise<ScanReceipt | null> => {
+    if (scanRef.current) return Promise.resolve(scanRef.current);
+    if (!pendingScanRef.current) {
+      const pending: Promise<ScanReceipt | null> = recordScan(code, getVisitorId())
+        .then(
+          (receipt) => {
+            scanRef.current = receipt;
+            return receipt;
+          },
+          // Recording is best-effort; the profile keeps working.
+          () => null,
+        )
+        .finally(() => {
+          if (pendingScanRef.current === pending) pendingScanRef.current = null;
+        });
+      pendingScanRef.current = pending;
     }
-    return scanRef.current;
+    return pendingScanRef.current;
   }, [code]);
+
+  /**
+   * Runs a scan-token request; on 404 (the token may have been rotated by a
+   * repeat scan in another tab) records a fresh scan and retries once.
+   * Resolves null when no scan could be recorded.
+   */
+  const withScan = useCallback(
+    async <T,>(request: (scan: ScanReceipt) => Promise<T>): Promise<{ value: T } | null> => {
+      const scan = await ensureScan();
+      if (!scan) return null;
+      try {
+        return { value: await request(scan) };
+      } catch (caught) {
+        if (!(caught instanceof ApiError && caught.status === 404)) throw caught;
+        if (scanRef.current === scan) scanRef.current = null;
+        const fresh = await ensureScan();
+        if (!fresh) return null;
+        return { value: await request(fresh) };
+      }
+    },
+    [ensureScan],
+  );
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -109,17 +145,17 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
     setFieldErrors({});
     setSending(true);
     try {
-      const scan = await ensureScan();
-      if (!scan) {
-        setFormError(GENERIC_ERROR);
-        return;
-      }
-      await sendFinderMessage(scan.scanId, scan.scanToken, {
+      const input = {
         body: body.trim(),
         ...(finderName.trim() ? { finderName: finderName.trim() } : {}),
         ...(finderPhone.trim() ? { finderPhone: finderPhone.trim() } : {}),
         website,
-      });
+      };
+      const done = await withScan((scan) => sendFinderMessage(scan.scanId, scan.scanToken, input));
+      if (!done) {
+        setFormError(GENERIC_ERROR);
+        return;
+      }
       setSent(true);
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 422) {
@@ -141,15 +177,16 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
     setContactError("");
     setContactState("loading");
     try {
-      const scan = await ensureScan();
-      if (!scan) {
+      const revealed = await withScan((scan) => revealContact(scan.scanId, scan.scanToken));
+      if (!revealed) {
         setContactError(GENERIC_ERROR);
         setContactState("idle");
         return;
       }
-      setContact(await revealContact(scan.scanId, scan.scanToken));
+      setContact(revealed.value);
       setContactState("revealed");
     } catch (caught) {
+      // A 404 here came from a freshly issued token: the owner hides contact.
       if (caught instanceof ApiError && caught.status === 404) {
         setContactState("declined");
         return;
@@ -159,7 +196,8 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
     }
   }
 
-  const photo = tagPhotoUrl(profile.photoUrl);
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const photo = photoFailed ? undefined : tagPhotoUrl(profile.photoUrl);
   const important = [...(profile.allergies ?? []), ...(profile.specialConditions ?? [])];
   const family = [profile.ownerFirstName, profile.secondOwnerFirstName].filter(Boolean).join(" y ");
   const age = formatAgeMonths(profile.ageMonths);
@@ -182,7 +220,7 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
         {photo && (
           // Same-origin proxy URL; next/image would add nothing for a one-off photo.
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="public-photo" src={photo} alt={`Foto de ${profile.name}`} />
+          <img className="public-photo" src={photo} alt={`Foto de ${profile.name}`} onError={() => setPhotoFailed(true)} />
         )}
         <h1>Hola, soy {profile.name}</h1>
       </header>
@@ -247,7 +285,7 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
         )}
         {contactState === "revealed" && contact && (
           <div className="public-contact">
-            <a className="button secondary button-large public-action" href={`tel:${contact.phone}`}>
+            <a className="button secondary button-large public-action" href={telHref(contact.phone)}>
               Llamar {contact.phone}
             </a>
             <a className="button secondary button-large public-action" href={contact.whatsappUrl} target="_blank" rel="noopener noreferrer">
