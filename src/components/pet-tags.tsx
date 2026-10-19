@@ -72,7 +72,8 @@ export function PetTags({ petId }: { petId: string }) {
       link.href = objectUrl;
       link.download = `placa-${tag.code}.svg`;
       link.click();
-      URL.revokeObjectURL(objectUrl);
+      // Safari needs a moment to start the download before the blob URL is released.
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch {
       setQrError(tag.id);
     }
@@ -123,8 +124,8 @@ export function PetTags({ petId }: { petId: string }) {
                     ) : (
                       <>
                         <button type="button" className="button secondary compact" onClick={() => copyLink(tag)}><Copy size={14} /> Copiar enlace</button>
-                        <button type="button" className="button secondary compact" onClick={() => downloadQr(tag)}><Download size={14} /> Descargar QR</button>
                         {copied === tag.id && <span className="pet-tag-copied" role="status">Enlace copiado</span>}
+                        <button type="button" className="button secondary compact" onClick={() => downloadQr(tag)}><Download size={14} /> Descargar QR</button>
                         <button type="button" className="button ghost compact" onClick={() => setConfirmId(tag.id)} disabled={busy}><Power size={14} /> Desactivar</button>
                       </>
                     )}

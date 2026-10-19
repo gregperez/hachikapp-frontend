@@ -114,7 +114,11 @@ describe("PetTags", () => {
 
   describe("Descargar QR", () => {
     const spies: Array<{ mockRestore: () => void }> = [];
-    afterEach(() => { while (spies.length) spies.pop()?.mockRestore(); });
+    afterEach(() => {
+      while (spies.length) spies.pop()?.mockRestore();
+      Reflect.deleteProperty(URL, "createObjectURL");
+      Reflect.deleteProperty(URL, "revokeObjectURL");
+    });
 
     it("downloads placa-<CODE>.svg for an active tag", async () => {
       lists = [[tag(1)]];
@@ -123,12 +127,15 @@ describe("PetTags", () => {
       spies.push(toString);
       const createObjectURL = vi.fn((blob: Blob) => (blob ? "blob:qr-1" : ""));
       const revokeObjectURL = vi.fn();
-      vi.stubGlobal("URL", Object.assign(URL, { createObjectURL, revokeObjectURL }));
+      Object.defineProperty(URL, "createObjectURL", { value: createObjectURL, configurable: true, writable: true });
+      Object.defineProperty(URL, "revokeObjectURL", { value: revokeObjectURL, configurable: true, writable: true });
       let downloaded = "";
-      spies.push(vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) { downloaded = this.download; }));
+      let href = "";
+      spies.push(vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) { downloaded = this.download; href = this.getAttribute("href") ?? ""; }));
       render(<PetTags petId={PET} />);
       await userEvent.click(await screen.findByRole("button", { name: /Descargar QR/ }));
-      await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith("blob:qr-1"));
+      await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith("blob:qr-1"), { timeout: 3000 });
+      expect(href).toBe("blob:qr-1");
       expect(downloaded).toBe("placa-K7M2Q9XR41.svg");
       expect(toString).toHaveBeenCalledWith("https://hachikapp.cl/t/K7M2Q9XR41", expect.objectContaining({ type: "svg" }));
       expect(createObjectURL.mock.calls[0][0].type).toBe("image/svg+xml");
