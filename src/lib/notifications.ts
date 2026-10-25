@@ -4,10 +4,10 @@ import type { ApiEnvelope, AppNotification, CursorPage } from "@/lib/types";
 
 const MESSAGE_PREVIEW_LENGTH = 140;
 
-export function listNotifications(cursor?: string, limit = 20): Promise<CursorPage<AppNotification>> {
+export async function listNotifications(cursor?: string, limit = 20): Promise<CursorPage<AppNotification>> {
   const query = new URLSearchParams({ limit: String(limit) });
   if (cursor) query.set("cursor", cursor);
-  return api<CursorPage<AppNotification>>(`v1/notifications?${query.toString()}`);
+  return dataOf(await api<ApiEnvelope<CursorPage<AppNotification>>>(`v1/notifications?${query.toString()}`));
 }
 
 export async function unreadCount(): Promise<number> {
@@ -41,9 +41,9 @@ export function notificationText(n: AppNotification): { title: string; body: str
       };
     }
     case "location_shared":
-      return { title: `${petName}: compartieron dónde la encontraron`, body: "Toca para ver en el mapa" };
+      return { title: `${petName}: compartieron su ubicación`, body: "Toca para ver en el mapa" };
     case "phone_revealed":
-      return { title: `${petName}: alguien vio tu número`, body: "Quien la encontró pidió tu teléfono" };
+      return { title: `${petName}: alguien vio tu número`, body: `Quien encontró a ${petName} pidió tu teléfono` };
   }
 }
 

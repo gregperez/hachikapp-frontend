@@ -379,8 +379,8 @@ describe("PublicProfileView message form", () => {
 });
 
 describe("PublicProfileView share location", () => {
-  const EXPLANATION = "Tu ubicación ayuda a su familia a encontrarla. Solo la verá su familia.";
-  const THANKS = "¡Gracias! Su familia verá dónde la encontraste";
+  const EXPLANATION = "Tu ubicación ayuda a su familia a encontrar a Luna. Solo la verá su familia.";
+  const THANKS = "¡Gracias! Su familia verá dónde está";
 
   async function startShare(user: ReturnType<typeof userEvent.setup>) {
     await user.click(screen.getByRole("button", { name: "Compartir mi ubicación" }));
@@ -562,7 +562,7 @@ describe("PublicProfileView share location", () => {
     expect(screen.getByRole("button", { name: "Compartir mi ubicación" })).toBeInTheDocument();
     await act(async () => succeed(fixedPosition));
     expect(callsTo(fetchMock, "/location")).toHaveLength(0);
-    expect(screen.queryByText("¡Gracias! Su familia verá dónde la encontraste")).not.toBeInTheDocument();
+    expect(screen.queryByText(THANKS)).not.toBeInTheDocument();
   });
 
   it("clears the previous note when the explanation is reopened", async () => {

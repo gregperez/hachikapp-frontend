@@ -36,7 +36,7 @@ function item(overrides: Partial<AppNotification> & { id: string }): AppNotifica
 }
 
 function page(items: AppNotification[], hasNext = false, nextCursor?: string) {
-  return new Response(JSON.stringify({ data: items, limit: 20, hasNext, nextCursor }), {
+  return new Response(JSON.stringify({ status: 200, message: "Ok", data: { data: items, limit: 20, hasNext, nextCursor } }), {
     status: 200, headers: { "Content-Type": "application/json" },
   });
 }
@@ -70,7 +70,7 @@ describe("NotificationsList", () => {
     vi.stubGlobal("fetch", vi.fn(async () => page(items)));
     render(<NotificationsList />);
     expect(await screen.findByText("Escanearon la placa de Luna")).toBeInTheDocument();
-    expect(screen.getByText("Luna: compartieron dónde la encontraron")).toBeInTheDocument();
+    expect(screen.getByText("Luna: compartieron su ubicación")).toBeInTheDocument();
     expect(screen.getByText("Luna: te dejaron un mensaje")).toBeInTheDocument();
     expect(screen.getByText("Está conmigo en la plaza")).toBeInTheDocument();
     expect(screen.getByText("Luna: alguien vio tu número")).toBeInTheDocument();

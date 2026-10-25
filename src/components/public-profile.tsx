@@ -53,7 +53,7 @@ export function PublicProfileView({
 }: {
   code: string;
   result: PublicTagResult;
-  /** Overridable so tests do not wait 20 s. */
+  /** Overridable so tests do not wait 45 s. */
   geoFallbackMs?: number;
 }) {
   if (result.kind === "not_found") return <Notice>No encontramos esta placa</Notice>;
@@ -79,7 +79,7 @@ const GEO_PERMISSION_DENIED = 1;
 const GEO_TIMEOUT = 3;
 // The browser's own timeout only starts after the permission prompt is answered;
 // this guards against a prompt dismissed without any callback.
-const GEO_FALLBACK_MS = 20000;
+const GEO_FALLBACK_MS = 45000;
 const GEO_OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 };
 
 class GeoError extends Error {
@@ -412,7 +412,7 @@ function ActiveProfile({ code, profile, geoFallbackMs }: { code: string; profile
         )}
         {hasGeolocation && (locationPhase === "explain" || locationPhase === "locating" || locationPhase === "sending") && (
           <div className="public-card public-location">
-            <p>Tu ubicación ayuda a su familia a encontrarla. Solo la verá su familia.</p>
+            <p>{`Tu ubicación ayuda a su familia a encontrar a ${profile.name}. Solo la verá su familia.`}</p>
             <button className="button primary button-large public-action" type="button" onClick={shareNow} disabled={locationPhase !== "explain"}>
               {locationPhase === "locating" ? "Buscando tu ubicación..." : locationPhase === "sending" ? "Enviando..." : "Compartir ahora"}
             </button>
@@ -421,7 +421,7 @@ function ActiveProfile({ code, profile, geoFallbackMs }: { code: string; profile
             </button>
           </div>
         )}
-        {locationPhase === "done" && <p className="public-thanks" role="status">¡Gracias! Su familia verá dónde la encontraste</p>}
+        {locationPhase === "done" && <p className="public-thanks" role="status">¡Gracias! Su familia verá dónde está</p>}
         {locationNote && (
           <p className={locationNote.kind === "error" ? "public-error" : "public-note"} role={locationNote.kind === "error" ? "alert" : "status"}>
             {locationNote.text}

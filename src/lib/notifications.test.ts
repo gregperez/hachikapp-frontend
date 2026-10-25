@@ -11,6 +11,10 @@ import {
 import { formatChileDateTime } from "@/lib/tags";
 import type { AppNotification } from "@/lib/types";
 
+function envelope<T>(data: T) {
+  return { status: 200, message: "Ok", data };
+}
+
 function stubFetch(status: number, body: unknown) {
   const fetchMock = vi.fn().mockResolvedValue({
     ok: status >= 200 && status < 300,
@@ -59,12 +63,12 @@ describe("notificationText", () => {
 
   it("handles location shared and phone revealed", () => {
     expect(notificationText(notification("location_shared"))).toEqual({
-      title: "Hachi: compartieron dónde la encontraron",
+      title: "Hachi: compartieron su ubicación",
       body: "Toca para ver en el mapa",
     });
     expect(notificationText(notification("phone_revealed"))).toEqual({
       title: "Hachi: alguien vio tu número",
-      body: "Quien la encontró pidió tu teléfono",
+      body: "Quien encontró a Hachi pidió tu teléfono",
     });
   });
 });
@@ -87,20 +91,20 @@ describe("mapsUrl", () => {
 
 describe("notification client", () => {
   it("lists notifications with the default limit", async () => {
-    const page = { data: [], limit: 20, hasNext: false };
-    const fetchMock = stubFetch(200, page);
+    const page = { data: [notification("tag_scanned")], limit: 20, hasNext: true, nextCursor: "CUR1" };
+    const fetchMock = stubFetch(200, envelope(page));
     await expect(listNotifications()).resolves.toEqual(page);
     expect(fetchMock.mock.calls[0][0]).toBe("/api/backend/v1/notifications?limit=20");
   });
 
   it("passes cursor and limit", async () => {
-    const fetchMock = stubFetch(200, { data: [], limit: 5, hasNext: false });
+    const fetchMock = stubFetch(200, envelope({ data: [], limit: 5, hasNext: false }));
     await listNotifications("abc==", 5);
     expect(fetchMock.mock.calls[0][0]).toBe("/api/backend/v1/notifications?limit=5&cursor=abc%3D%3D");
   });
 
   it("reads the unread count", async () => {
-    const fetchMock = stubFetch(200, { data: { count: 7 } });
+    const fetchMock = stubFetch(200, envelope({ count: 7 }));
     await expect(unreadCount()).resolves.toBe(7);
     expect(fetchMock.mock.calls[0][0]).toBe("/api/backend/v1/notifications/unread-count");
   });
@@ -114,7 +118,7 @@ describe("notification client", () => {
   });
 
   it("marks all as read and returns the updated count", async () => {
-    const fetchMock = stubFetch(200, { data: { updated: 3 } });
+    const fetchMock = stubFetch(200, envelope({ updated: 3 }));
     await expect(markAllRead()).resolves.toBe(3);
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("/api/backend/v1/notifications/read-all");
