@@ -532,4 +532,49 @@ describe("PublicProfileView share location", () => {
     expect(locations[1][0]).toBe("/api/backend/v1/public/scans/s2/location");
     expect((locations[1][1].headers as Record<string, string>)["X-Scan-Token"]).toBe("tok2");
   });
+
+  it("never stays stuck when the permission prompt is dismissed without a callback", async () => {
+    stubGeolocation(() => {});
+    const fetchMock = stubApi({ "/scans": scanOk, "/location": () => ({ status: 204 }) });
+    const user = userEvent.setup();
+    render(<PublicProfileView code={CODE} result={ok()} geoFallbackMs={30} />);
+    await waitFor(() => expect(callsTo(fetchMock, "/scans")).toHaveLength(1));
+    await screen.findByRole("button", { name: "Compartir mi ubicación" });
+    await startShare(user);
+    expect(await screen.findByText("No pudimos obtener tu ubicación. Igual puedes dejar un mensaje")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Compartir mi ubicación" })).not.toBeDisabled();
+    expect(callsTo(fetchMock, "/location")).toHaveLength(0);
+  });
+
+  it("lets the finder cancel while locating and ignores the late position", async () => {
+    let succeed: GeoSuccess = () => {};
+    stubGeolocation((success) => {
+      succeed = success;
+    });
+    const fetchMock = stubApi({ "/scans": scanOk, "/location": () => ({ status: 204 }) });
+    const user = userEvent.setup();
+    render(<PublicProfileView code={CODE} result={ok()} />);
+    await waitFor(() => expect(callsTo(fetchMock, "/scans")).toHaveLength(1));
+    await screen.findByRole("button", { name: "Compartir mi ubicación" });
+    await startShare(user);
+    expect(screen.getByRole("button", { name: "Cancelar" })).not.toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.getByRole("button", { name: "Compartir mi ubicación" })).toBeInTheDocument();
+    await act(async () => succeed(fixedPosition));
+    expect(callsTo(fetchMock, "/location")).toHaveLength(0);
+    expect(screen.queryByText("¡Gracias! Su familia verá dónde la encontraste")).not.toBeInTheDocument();
+  });
+
+  it("clears the previous note when the explanation is reopened", async () => {
+    stubGeolocation((_success, failure) => failure({ code: 1 }));
+    const fetchMock = stubApi({ "/scans": scanOk });
+    const user = userEvent.setup();
+    render(<PublicProfileView code={CODE} result={ok()} />);
+    await waitFor(() => expect(callsTo(fetchMock, "/scans")).toHaveLength(1));
+    await screen.findByRole("button", { name: "Compartir mi ubicación" });
+    await startShare(user);
+    expect(await screen.findByText("Sin problema, igual puedes dejar un mensaje")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Compartir mi ubicación" }));
+    expect(screen.queryByText("Sin problema, igual puedes dejar un mensaje")).not.toBeInTheDocument();
+  });
 });

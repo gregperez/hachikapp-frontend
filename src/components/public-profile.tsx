@@ -46,7 +46,16 @@ function Notice({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function PublicProfileView({ code, result }: { code: string; result: PublicTagResult }) {
+export function PublicProfileView({
+  code,
+  result,
+  geoFallbackMs = GEO_FALLBACK_MS,
+}: {
+  code: string;
+  result: PublicTagResult;
+  /** Overridable so tests do not wait 20 s. */
+  geoFallbackMs?: number;
+}) {
   if (result.kind === "not_found") return <Notice>No encontramos esta placa</Notice>;
   if (result.kind === "error") return <Notice>{GENERIC_ERROR}</Notice>;
   const { view } = result;
@@ -61,12 +70,16 @@ export function PublicProfileView({ code, result }: { code: string; result: Publ
     );
   }
   if (view.state === "disabled" || !view.profile) return <Notice>Esta placa no está disponible</Notice>;
-  return <ActiveProfile code={code} profile={view.profile} />;
+  return <ActiveProfile code={code} profile={view.profile} geoFallbackMs={geoFallbackMs} />;
 }
 
 type LocationPhase = "idle" | "explain" | "locating" | "sending" | "done";
 
 const GEO_PERMISSION_DENIED = 1;
+const GEO_TIMEOUT = 3;
+// The browser's own timeout only starts after the permission prompt is answered;
+// this guards against a prompt dismissed without any callback.
+const GEO_FALLBACK_MS = 20000;
 const GEO_OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 };
 
 class GeoError extends Error {
@@ -75,15 +88,34 @@ class GeoError extends Error {
   }
 }
 
-function currentPosition(): Promise<GeolocationPosition> {
+function currentPosition(fallbackMs: number): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(resolve, (error) => reject(new GeoError(error.code)), GEO_OPTIONS);
+    let settled = false;
+    const timer = setTimeout(() => {
+      settled = true;
+      reject(new GeoError(GEO_TIMEOUT));
+    }, fallbackMs);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(position);
+      },
+      (error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(new GeoError(error.code));
+      },
+      GEO_OPTIONS,
+    );
   });
 }
 
 type ContactState = "idle" | "loading" | "revealed" | "declined";
 
-function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile }) {
+function ActiveProfile({ code, profile, geoFallbackMs }: { code: string; profile: PublicProfile; geoFallbackMs: number }) {
   const scanRef = useRef<ScanReceipt | null>(null);
   const pendingScanRef = useRef<Promise<ScanReceipt | null> | null>(null);
   const startedRef = useRef(false);
@@ -223,14 +255,24 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
     setHasGeolocation(typeof navigator !== "undefined" && Boolean(navigator.geolocation));
   }, []);
 
+  const attemptRef = useRef(0);
+
+  function cancelLocation() {
+    attemptRef.current += 1; // a late result of the abandoned attempt is ignored
+    setLocationNote(null);
+    setLocationPhase("idle");
+  }
+
   async function shareNow() {
     if (locationPhase === "locating" || locationPhase === "sending") return;
+    const attempt = ++attemptRef.current;
     setLocationNote(null);
     setLocationPhase("locating");
     let position: GeolocationPosition;
     try {
-      position = await currentPosition();
+      position = await currentPosition(geoFallbackMs);
     } catch (caught) {
+      if (attemptRef.current !== attempt) return;
       const denied = caught instanceof GeoError && caught.code === GEO_PERMISSION_DENIED;
       setLocationNote({
         text: denied
@@ -241,6 +283,7 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
       setLocationPhase("idle");
       return;
     }
+    if (attemptRef.current !== attempt) return;
     setLocationPhase("sending");
     try {
       const { latitude, longitude, accuracy } = position.coords;
@@ -363,7 +406,7 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
           </div>
         )}
         {hasGeolocation && locationPhase === "idle" && (
-          <button className="button secondary button-large public-action" type="button" onClick={() => setLocationPhase("explain")}>
+          <button className="button secondary button-large public-action" type="button" onClick={() => { setLocationNote(null); setLocationPhase("explain"); }}>
             Compartir mi ubicación
           </button>
         )}
@@ -373,7 +416,7 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
             <button className="button primary button-large public-action" type="button" onClick={shareNow} disabled={locationPhase !== "explain"}>
               {locationPhase === "locating" ? "Buscando tu ubicación..." : locationPhase === "sending" ? "Enviando..." : "Compartir ahora"}
             </button>
-            <button className="button secondary button-large public-action" type="button" onClick={() => { setLocationNote(null); setLocationPhase("idle"); }} disabled={locationPhase !== "explain"}>
+            <button className="button secondary button-large public-action" type="button" onClick={cancelLocation} disabled={locationPhase === "sending"}>
               Cancelar
             </button>
           </div>
