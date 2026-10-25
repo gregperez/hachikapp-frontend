@@ -49,4 +49,23 @@ describe("PetScans", () => {
     expect(screen.getByText("iPhone o iPad")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Ver más" })).not.toBeInTheDocument();
   });
+
+  it("shows the shared location with a map link", async () => {
+    const located = { ...scan, location: { lat: -33.45, lng: -70.66, accuracyM: 12, at: "2026-10-01T15:31:00Z" } };
+    vi.stubGlobal("fetch", vi.fn(async () => page([located])));
+    render(<PetScans petId={PET} />);
+    expect(await screen.findByText("Compartió su ubicación")).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "Ver en el mapa" });
+    expect(link).toHaveAttribute("href", "https://maps.google.com/?q=-33.450000,-70.660000");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("shows no location text when the scan has no location", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => page([scan])));
+    render(<PetScans petId={PET} />);
+    expect(await screen.findByText("iPhone o iPad")).toBeInTheDocument();
+    expect(screen.queryByText("Compartió su ubicación")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Ver en el mapa" })).not.toBeInTheDocument();
+  });
 });

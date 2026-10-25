@@ -2,9 +2,10 @@
 
 import { LoadingState, Notice } from "@/components/ui";
 import { api, dataOf, errorMessage } from "@/lib/api";
+import { mapsUrl } from "@/lib/notifications";
 import { deviceLabel, formatChileDateTime, groupTagCode, telHref } from "@/lib/tags";
 import type { ApiEnvelope, CursorPage, ScanWithMessages } from "@/lib/types";
-import { Eye } from "lucide-react";
+import { Eye, MapPin } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 const PAGE_SIZE = 10;
@@ -56,6 +57,14 @@ export function PetScans({ petId }: { petId: string }) {
                   <span>{deviceLabel(scan.userAgentFamily)}</span>
                   <span>{groupTagCode(scan.tagCode)}</span>
                   {scan.phoneRevealedAt && <span className="status-badge warning"><Eye size={12} /> Vio tu número</span>}
+                  {scan.location && (
+                    <>
+                      <span>Compartió su ubicación</span>
+                      <a href={mapsUrl(scan.location.lat, scan.location.lng)} target="_blank" rel="noopener noreferrer">
+                        <MapPin size={12} /> Ver en el mapa
+                      </a>
+                    </>
+                  )}
                 </p>
                 {scan.messages.map((message) => (
                   <blockquote key={message.id} className="pet-scan-message">
