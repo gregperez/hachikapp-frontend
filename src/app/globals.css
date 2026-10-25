@@ -599,6 +599,8 @@ html[data-theme="dark"] .button.danger { color: var(--canvas); }
 .public-actions { display: grid; gap: 12px; }
 .public-action { min-height: 52px; font-size: 16px; }
 .public-contact { display: grid; gap: 12px; }
+.public-location { display: grid; gap: 12px; }
+.public-location p { margin: 0; color: var(--ink); font-size: 16px; line-height: 1.5; }
 .public-note { margin: 0; padding: 14px; color: var(--ink); background: var(--subtle); border-radius: 12px; text-align: center; font-size: 15px; }
 .public-thanks { margin: 0; padding: 16px; color: var(--primary-ink); background: var(--green-soft); border: 1px solid var(--green-line); border-radius: var(--radius); text-align: center; font-size: 16px; font-weight: 700; }
 .public-error { margin: 0; color: var(--danger); font-size: 14px; font-weight: 600; }

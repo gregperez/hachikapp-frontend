@@ -8,6 +8,7 @@ import {
   recordScan,
   revealContact,
   sendFinderMessage,
+  shareLocation,
   tagPhotoUrl,
   telHref,
   type PublicTagResult,
@@ -61,6 +62,23 @@ export function PublicProfileView({ code, result }: { code: string; result: Publ
   }
   if (view.state === "disabled" || !view.profile) return <Notice>Esta placa no está disponible</Notice>;
   return <ActiveProfile code={code} profile={view.profile} />;
+}
+
+type LocationPhase = "idle" | "explain" | "locating" | "sending" | "done";
+
+const GEO_PERMISSION_DENIED = 1;
+const GEO_OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 };
+
+class GeoError extends Error {
+  constructor(readonly code: number) {
+    super("geolocation failed");
+  }
+}
+
+function currentPosition(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, (error) => reject(new GeoError(error.code)), GEO_OPTIONS);
+  });
 }
 
 type ContactState = "idle" | "loading" | "revealed" | "declined";
@@ -196,6 +214,57 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
     }
   }
 
+  const [hasGeolocation, setHasGeolocation] = useState(false);
+  const [locationPhase, setLocationPhase] = useState<LocationPhase>("idle");
+  const [locationNote, setLocationNote] = useState<{ text: string; kind: "note" | "error" } | null>(null);
+
+  // Checked after mount so server and first client render agree.
+  useEffect(() => {
+    setHasGeolocation(typeof navigator !== "undefined" && Boolean(navigator.geolocation));
+  }, []);
+
+  async function shareNow() {
+    if (locationPhase === "locating" || locationPhase === "sending") return;
+    setLocationNote(null);
+    setLocationPhase("locating");
+    let position: GeolocationPosition;
+    try {
+      position = await currentPosition();
+    } catch (caught) {
+      const denied = caught instanceof GeoError && caught.code === GEO_PERMISSION_DENIED;
+      setLocationNote({
+        text: denied
+          ? "Sin problema, igual puedes dejar un mensaje"
+          : "No pudimos obtener tu ubicación. Igual puedes dejar un mensaje",
+        kind: "note",
+      });
+      setLocationPhase("idle");
+      return;
+    }
+    setLocationPhase("sending");
+    try {
+      const { latitude, longitude, accuracy } = position.coords;
+      const done = await withScan((scan) => shareLocation(scan.scanId, scan.scanToken, { lat: latitude, lng: longitude, accuracy }));
+      if (!done) {
+        setLocationNote({ text: GENERIC_ERROR, kind: "error" });
+        setLocationPhase("explain");
+        return;
+      }
+      setLocationPhase("done");
+    } catch (caught) {
+      // Already shared for this scan: the family has it, so it counts as done.
+      if (caught instanceof ApiError && caught.status === 409) {
+        setLocationPhase("done");
+        return;
+      }
+      setLocationNote({
+        text: caught instanceof ApiError && caught.status === 429 ? errorMessage(caught) : GENERIC_ERROR,
+        kind: "error",
+      });
+      setLocationPhase("explain");
+    }
+  }
+
   const [photoFailed, setPhotoFailed] = useState(false);
   const photo = photoFailed ? undefined : tagPhotoUrl(profile.photoUrl);
   const important = [...(profile.allergies ?? []), ...(profile.specialConditions ?? [])];
@@ -292,6 +361,28 @@ function ActiveProfile({ code, profile }: { code: string; profile: PublicProfile
               WhatsApp
             </a>
           </div>
+        )}
+        {hasGeolocation && locationPhase === "idle" && (
+          <button className="button secondary button-large public-action" type="button" onClick={() => setLocationPhase("explain")}>
+            Compartir mi ubicación
+          </button>
+        )}
+        {hasGeolocation && (locationPhase === "explain" || locationPhase === "locating" || locationPhase === "sending") && (
+          <div className="public-card public-location">
+            <p>Tu ubicación ayuda a su familia a encontrarla. Solo la verá su familia.</p>
+            <button className="button primary button-large public-action" type="button" onClick={shareNow} disabled={locationPhase !== "explain"}>
+              {locationPhase === "locating" ? "Buscando tu ubicación..." : locationPhase === "sending" ? "Enviando..." : "Compartir ahora"}
+            </button>
+            <button className="button secondary button-large public-action" type="button" onClick={() => { setLocationNote(null); setLocationPhase("idle"); }} disabled={locationPhase !== "explain"}>
+              Cancelar
+            </button>
+          </div>
+        )}
+        {locationPhase === "done" && <p className="public-thanks" role="status">¡Gracias! Su familia verá dónde la encontraste</p>}
+        {locationNote && (
+          <p className={locationNote.kind === "error" ? "public-error" : "public-note"} role={locationNote.kind === "error" ? "alert" : "status"}>
+            {locationNote.text}
+          </p>
         )}
         {contactState === "declined" && <p className="public-note" role="status">Su familia prefiere que le dejes un mensaje</p>}
         {contactError && <p className="public-error" role="alert">{contactError}</p>}
