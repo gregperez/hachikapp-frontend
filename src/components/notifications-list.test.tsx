@@ -108,6 +108,32 @@ describe("NotificationsList", () => {
     window.removeEventListener("hachikapp:notifications-changed", changed);
   });
 
+  it("still navigates when marking as read fails", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(page([item({ id: "n1" })]))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ detail: "boom" }), { status: 500 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<NotificationsList />);
+    await userEvent.click(await screen.findByRole("button", { name: /Escanearon la placa de Luna/ }));
+    await waitFor(() => expect(nav.pushed).toContain(`/dashboard/pets/${PET}`));
+  });
+
+  it("ignores a second click while marking as read is pending", async () => {
+    let release: (value: Response) => void = () => {};
+    const pending = new Promise<Response>((resolve) => { release = resolve; });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(page([item({ id: "n1" })]))
+      .mockReturnValueOnce(pending);
+    vi.stubGlobal("fetch", fetchMock);
+    render(<NotificationsList />);
+    const button = await screen.findByRole("button", { name: /Escanearon la placa de Luna/ });
+    await userEvent.click(button);
+    await userEvent.click(button);
+    release(empty204());
+    await waitFor(() => expect(nav.pushed).toHaveLength(1));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("does not post when the item is already read", async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(page([item({ id: "n1", readAt: "2026-10-02T10:00:00Z" })]));
     vi.stubGlobal("fetch", fetchMock);

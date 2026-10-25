@@ -5,10 +5,10 @@ import { Bell } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const POLL_MS = 60_000;
+const DEFAULT_POLL_MS = 60_000;
 export const NOTIFICATIONS_CHANGED_EVENT = "hachikapp:notifications-changed";
 
-export function NotificationBell() {
+export function NotificationBell({ pollMs = DEFAULT_POLL_MS }: { pollMs?: number }) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -18,12 +18,11 @@ export function NotificationBell() {
         const next = await unreadCount();
         if (active) setCount(next);
       } catch {
-        // Silent: the bell just shows no badge when the count is unavailable.
-        if (active) setCount(0);
+        // Silent: keep the last known count when a poll fails.
       }
     }
     void refresh();
-    const timer = window.setInterval(() => void refresh(), POLL_MS);
+    const timer = window.setInterval(() => void refresh(), pollMs);
     const onRefresh = () => void refresh();
     window.addEventListener("focus", onRefresh);
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, onRefresh);
@@ -33,7 +32,7 @@ export function NotificationBell() {
       window.removeEventListener("focus", onRefresh);
       window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, onRefresh);
     };
-  }, []);
+  }, [pollMs]);
 
   const badge = formatUnread(count);
   return (

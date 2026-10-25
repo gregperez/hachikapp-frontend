@@ -8,7 +8,7 @@ import { formatChileDateTime } from "@/lib/tags";
 import type { AppNotification } from "@/lib/types";
 import { MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 function announceChange() {
   window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED_EVENT));
@@ -21,6 +21,7 @@ export function NotificationsList() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
   const [error, setError] = useState("");
+  const opening = useRef(new Set<string>());
 
   const load = useCallback(async (cursor?: string) => {
     try {
@@ -45,6 +46,8 @@ export function NotificationsList() {
   }
 
   async function open(notification: AppNotification) {
+    if (opening.current.has(notification.id)) return;
+    opening.current.add(notification.id);
     if (!notification.readAt) {
       try {
         await markRead(notification.id);
@@ -55,6 +58,7 @@ export function NotificationsList() {
         // Navigating matters more than the read flag; the next poll corrects the count.
       }
     }
+    opening.current.delete(notification.id);
     router.push(`/dashboard/pets/${notification.petId}`);
   }
 

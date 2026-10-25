@@ -43,6 +43,49 @@ describe("NotificationBell", () => {
     expect(link.querySelector(".notification-badge")).toBeNull();
   });
 
+  it("keeps the last known count when a later poll fails", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(countResponse(4))
+      .mockResolvedValue(new Response("{}", { status: 500 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<NotificationBell />);
+    expect(await screen.findByRole("link", { name: "Avisos, 4 sin leer" })).toBeInTheDocument();
+    await act(async () => { window.dispatchEvent(new Event("focus")); });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole("link", { name: "Avisos, 4 sin leer" })).toBeInTheDocument();
+  });
+
+  it("polls on the interval", async () => {
+    const fetchMock = vi.fn(async () => countResponse(1));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<NotificationBell pollMs={30} />);
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2));
+  });
+
+  it("refreshes when the window regains focus", async () => {
+    const fetchMock = vi.fn(async () => countResponse(1));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<NotificationBell />);
+    await screen.findByRole("link", { name: "Avisos, 1 sin leer" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await act(async () => { window.dispatchEvent(new Event("focus")); });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+  });
+
+  it("stops polling and listening after unmount", async () => {
+    const fetchMock = vi.fn(async () => countResponse(1));
+    vi.stubGlobal("fetch", fetchMock);
+    const { unmount } = render(<NotificationBell pollMs={30} />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const calls = fetchMock.mock.calls.length;
+    window.dispatchEvent(new Event("focus"));
+    window.dispatchEvent(new Event("hachikapp:notifications-changed"));
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    expect(fetchMock.mock.calls.length).toBe(calls);
+  });
+
   it("refreshes when the notifications-changed event fires", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(countResponse(2))
