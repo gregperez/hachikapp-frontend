@@ -14,6 +14,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AccountMenu } from "./account-menu";
+import { NotificationBell } from "./notification-bell";
 import { useSession } from "./session-provider";
 import { useSettings } from "./settings-provider";
 import { AIChatPanel } from "./ai-chat-panel";
@@ -89,6 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="topbar-eyebrow">{settings.displayName}</span>
             <strong>{activeLabel}</strong>
           </div>
+          <NotificationBell />
           <AccountMenu user={user} loading={loading} onLogout={logout} />
         </header>
         <main className="page-content">{children}</main>

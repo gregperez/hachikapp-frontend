@@ -1,6 +1,7 @@
 import { canAccess, isFeatureEnabled } from "@/lib/permissions";
 import { ENTITY_IDS, type PermissionRequirement, type User } from "@/lib/types";
 import {
+  Bell,
   Bot,
   ClipboardList,
   LayoutDashboard,
@@ -61,6 +62,13 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/dashboard/pets",
         label: "Mis mascotas",
         icon: PawPrint,
+      },
+      {
+        id: "notifications",
+        kind: "link",
+        href: "/dashboard/avisos",
+        label: "Avisos",
+        icon: Bell,
       },
     ],
   },

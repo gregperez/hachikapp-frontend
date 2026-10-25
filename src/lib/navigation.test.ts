@@ -88,3 +88,13 @@ describe("tags navigation", () => {
     expect(canSeeNavItem(makeUser({ permissions: [permission(ENTITY_IDS.TAGS, { read: true })] }), item)).toBe(true);
   });
 });
+
+describe("avisos entry", () => {
+  it("is visible to any user without a permission", () => {
+    const home = visibleNavSections(makeUser()).find((section) => section.id === "home");
+    expect(home?.items.map((item) => item.id)).toContain("notifications");
+    const item = itemById("notifications");
+    expect(item.kind === "link" && item.href).toBe("/dashboard/avisos");
+    expect(canSeeNavItem(makeUser(), item)).toBe(true);
+  });
+});
