@@ -9,6 +9,7 @@ import {
   recordScan,
   revealContact,
   sendFinderMessage,
+  shareLocation,
   tagPhotoUrl,
   tagQrSvg,
   tagUrl,
@@ -152,6 +153,31 @@ describe("public scan client", () => {
     expect(url).toBe("/api/backend/v1/public/scans/s1/messages");
     expect(init.headers["X-Scan-Token"]).toBe("tok");
     expect(JSON.parse(init.body)).toEqual({ body: "Lo encontré", finderName: "Camila" });
+  });
+
+  it("shares the location with the scan token and a rounded accuracy", async () => {
+    const fetchMock = stubFetch(204, null);
+    await expect(shareLocation("s1", "tok", { lat: -33.45, lng: -70.66, accuracy: 12.6 })).resolves.toBeUndefined();
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/backend/v1/public/scans/s1/location");
+    expect(init.method).toBe("PUT");
+    expect(init.headers["X-Scan-Token"]).toBe("tok");
+    expect(JSON.parse(init.body)).toEqual({ lat: -33.45, lng: -70.66, accuracy: 13 });
+  });
+
+  it("clamps the accuracy to 0..100000", async () => {
+    const fetchMock = stubFetch(204, null);
+    await shareLocation("s1", "tok", { lat: 0, lng: 0, accuracy: 250000.4 });
+    await shareLocation("s1", "tok", { lat: 0, lng: 0, accuracy: -3 });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).accuracy).toBe(100000);
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).accuracy).toBe(0);
+  });
+
+  it("throws ApiError when the location was already shared", async () => {
+    stubFetch(409, { title: "Conflict", detail: "Location already shared" });
+    const error = await shareLocation("s1", "tok", { lat: 0, lng: 0, accuracy: 5 }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).status).toBe(409);
   });
 
   it("reveals the contact sending X-Scan-Token", async () => {

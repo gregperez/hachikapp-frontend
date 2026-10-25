@@ -58,6 +58,19 @@ export async function sendFinderMessage(scanId: string, token: string, input: Fi
   });
 }
 
+export async function shareLocation(
+  scanId: string,
+  token: string,
+  input: { lat: number; lng: number; accuracy: number },
+): Promise<void> {
+  const accuracy = Math.min(100000, Math.max(0, Math.round(input.accuracy)));
+  await api<unknown>(`v1/public/scans/${encodeURIComponent(scanId)}/location`, {
+    method: "PUT",
+    headers: { "X-Scan-Token": token },
+    body: JSON.stringify({ lat: input.lat, lng: input.lng, accuracy }),
+  });
+}
+
 export async function revealContact(scanId: string, token: string): Promise<PublicContact> {
   const envelope = await api<ApiEnvelope<PublicContact>>(`v1/public/scans/${encodeURIComponent(scanId)}/contact`, {
     method: "POST",

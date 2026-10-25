@@ -48,6 +48,7 @@ describe("tag errors", () => {
     expect(errorMessage(new ApiError("This tag is already linked", 409))).toBe("Esta placa ya está vinculada");
     expect(errorMessage(new ApiError("The pet already has 5 active tags", 409))).toBe("Tu mascota ya tiene 5 placas activas");
     expect(errorMessage(new ApiError("Tag not found", 404))).toBe("No encontramos esta placa");
+    expect(errorMessage(new ApiError("Location already shared", 409))).toBe("Ya compartiste tu ubicación");
   });
 
   it("translates any 429 regardless of the detail text", () => {

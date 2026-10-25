@@ -55,6 +55,7 @@ export function errorMessage(error: unknown): string {
       "This tag is already linked": "Esta placa ya está vinculada",
       "The pet already has 5 active tags": "Tu mascota ya tiene 5 placas activas",
       "Tag not found": "No encontramos esta placa",
+      "Location already shared": "Ya compartiste tu ubicación",
       "The requested resource was not found": "No encontramos lo que buscabas.",
     };
     if (translations[error.message]) return translations[error.message];

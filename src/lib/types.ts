@@ -265,7 +265,36 @@ export type ScanWithMessages = {
   scannedAt: string;
   userAgentFamily: "ios" | "android" | "desktop" | "other";
   phoneRevealedAt?: string;
+  location?: ScanLocation;
   messages: ScanMessage[];
+};
+
+export type ScanLocation = {
+  lat: number;
+  lng: number;
+  accuracyM: number;
+  at: string;
+};
+
+export type NotificationPayload = {
+  petName: string;
+  tagCode: string;
+  scannedAt: string;
+  device?: "ios" | "android" | "desktop" | "other";
+  location?: ScanLocation;
+  message?: { body: string; finderName?: string; finderPhone?: string };
+  phoneRevealed?: boolean;
+};
+
+export type AppNotification = {
+  id: string;
+  kind: "tag_scanned" | "location_shared" | "finder_message" | "phone_revealed";
+  petId: string;
+  tagId: string;
+  scanId?: string;
+  payload: NotificationPayload;
+  readAt?: string;
+  createdAt: string;
 };
 
 export type FinderMessageInput = {
